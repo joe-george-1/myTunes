@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizer</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-viz-window">
+    <div class="blob-body blob-viz-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <div class="blob-label"><span class="label-text">VISUALIZER</span><button class="gel-orb orb-xs"
+                    id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button></div>
+            <div class="viz-container">
+                <canvas id="main-viz"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="visualizer-renderer.js"></script>
+</body>
+
+</html>

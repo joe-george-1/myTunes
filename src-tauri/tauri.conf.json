@@ -1,0 +1,116 @@
+{
+    "$schema": "https://raw.githubusercontent.com/nicbarker/tauri/next/crates/tauri-config-schema/schema.json",
+    "productName": "myTunes",
+    "version": "1.0.0",
+    "identifier": "com.mytunes.player",
+    "build": {
+        "frontendDist": "../"
+    },
+    "app": {
+        "withGlobalTauri": true,
+        "windows": [
+            {
+                "label": "player",
+                "title": "Player",
+                "url": "windows/player.html",
+                "width": 380,
+                "height": 530,
+                "x": 60,
+                "y": 40,
+                "transparent": true,
+                "decorations": false,
+                "resizable": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": false
+            },
+            {
+                "label": "browser",
+                "title": "Browser",
+                "url": "windows/browser.html",
+                "width": 400,
+                "height": 500,
+                "x": 30,
+                "y": 570,
+                "transparent": true,
+                "decorations": false,
+                "resizable": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": true,
+                "visible": false
+            },
+            {
+                "label": "playlist",
+                "title": "Playlist",
+                "url": "windows/playlist.html",
+                "width": 350,
+                "height": 560,
+                "x": 480,
+                "y": 50,
+                "transparent": true,
+                "decorations": false,
+                "resizable": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": true,
+                "visible": false
+            },
+            {
+                "label": "visualizer",
+                "title": "Visualizer",
+                "url": "windows/visualizer.html",
+                "width": 440,
+                "height": 350,
+                "x": 460,
+                "y": 640,
+                "transparent": true,
+                "decorations": false,
+                "resizable": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": true,
+                "visible": false
+            },
+            {
+                "label": "settings",
+                "title": "Settings",
+                "url": "windows/settings.html",
+                "width": 380,
+                "height": 530,
+                "x": 860,
+                "y": 50,
+                "transparent": true,
+                "decorations": false,
+                "resizable": false,
+                "alwaysOnTop": false,
+                "skipTaskbar": true,
+                "visible": false
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "category": "AudioVideo",
+        "fileAssociations": [
+            {
+                "name": "Audio File",
+                "ext": [
+                    "mp3",
+                    "wav",
+                    "ogg",
+                    "flac",
+                    "aac",
+                    "m4a",
+                    "wma",
+                    "opus",
+                    "webm"
+                ],
+                "description": "Standard Audio Format",
+                "mimeType": "audio/*"
+            }
+        ],
+        "resources": [
+            "../skins/**/*"
+        ]
+    }
+}

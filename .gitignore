@@ -1,0 +1,30 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Tauri / Rust
+src-tauri/target/
+**/*.rs.bk
+
+# Build output
+dist/
+build/
+.next/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Environmental variables
+.env
+.env.local
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

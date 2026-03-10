@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>myTunes</title>
+  <meta name="description" content="A disembodied Frutiger Aero media player with modular floating gel interfaces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <!-- ════════ PLAYER BLOB ════════ -->
+  <div id="player-blob" class="module draggable blob blob-player">
+    <div class="gel-highlight"></div>
+    <div class="scanlines"></div>
+    <div class="blob-inner">
+      <!-- Track display -->
+      <div class="player-display">
+        <div class="display-screen">
+          <div class="track-title-marquee" id="track-title">
+            <span>LIQUI✦GEL PLAYER</span>
+          </div>
+          <div class="track-time" id="track-time">—:—</div>
+          <canvas id="mini-viz" class="mini-visualizer"></canvas>
+        </div>
+      </div>
+
+      <!-- Seek -->
+      <div class="seek-wrapper">
+        <div class="seek-bar" id="seek-bar">
+          <div class="seek-progress" id="seek-progress"></div>
+          <div class="seek-handle" id="seek-handle"></div>
+        </div>
+      </div>
+
+      <!-- Transport -->
+      <div class="transport-row">
+        <button class="gel-orb orb-sm" id="btn-prev" title="Previous">⏮</button>
+        <button class="gel-orb orb-lg" id="btn-play" title="Play">▶</button>
+        <button class="gel-orb orb-sm" id="btn-stop" title="Stop">⏹</button>
+        <button class="gel-orb orb-sm" id="btn-next" title="Next">⏭</button>
+      </div>
+
+      <!-- Volume + Modes -->
+      <div class="controls-row">
+        <div class="volume-pill">
+          <span class="vol-icon">🔊</span>
+          <div class="volume-track" id="volume-track">
+            <div class="volume-fill" id="volume-fill"></div>
+          </div>
+        </div>
+        <div class="mode-pills">
+          <button class="gel-pill" id="btn-shuffle" title="Shuffle">⟳</button>
+          <button class="gel-pill" id="btn-repeat" title="Repeat">∞</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ FILE BROWSER BLOB ════════ -->
+  <div id="browser-blob" class="module draggable blob blob-browser">
+    <div class="gel-highlight"></div>
+    <div class="scanlines"></div>
+    <div class="blob-inner">
+      <div class="blob-label">
+        <span class="label-text">BROWSER</span>
+        <button class="gel-orb orb-xs" id="btn-browse" title="Open files">📂</button>
+      </div>
+      <div class="file-list-scroll" id="file-list">
+        <div class="file-empty-state">
+          <div class="empty-icon">🎵</div>
+          <div class="empty-text">Drop audio files<br>or click 📂</div>
+        </div>
+      </div>
+      <input type="file" id="file-input" multiple accept="audio/*" style="display:none">
+      <input type="file" id="folder-input" webkitdirectory style="display:none">
+    </div>
+  </div>
+
+  <!-- ════════ PLAYLIST BLOB ════════ -->
+  <div id="playlist-blob" class="module draggable blob blob-playlist">
+    <div class="gel-highlight"></div>
+    <div class="scanlines"></div>
+    <div class="blob-inner">
+      <div class="blob-label">
+        <span class="label-text">PLAYLIST</span>
+        <span class="label-count" id="playlist-count">0</span>
+        <button class="gel-orb orb-xs" id="btn-clear-playlist" title="Clear">✕</button>
+      </div>
+      <div class="playlist-scroll" id="playlist-list">
+        <div class="playlist-empty">✦ empty ✦</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VISUALIZER BLOB ════════ -->
+  <div id="visualizer-blob" class="module draggable blob blob-viz">
+    <div class="gel-highlight"></div>
+    <div class="scanlines"></div>
+    <div class="blob-inner">
+      <div class="blob-label"><span class="label-text">VISUALIZER</span></div>
+      <div class="viz-container">
+        <canvas id="main-viz"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden audio element -->
+  <audio id="audio-element" preload="auto"></audio>
+
+  <script type="module" src="/main.js"></script>
+</body>
+
+</html>

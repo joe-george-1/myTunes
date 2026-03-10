@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Browser</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-browser-window">
+    <div class="blob-body blob-browser-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <!-- Navigation bar -->
+            <div class="browser-nav">
+                <button class="gel-orb orb-xs" id="btn-back" title="Go up">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>⬆
+                </button>
+                <button class="gel-orb orb-xs" id="btn-home" title="Home">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>🏠
+                </button>
+                <div class="browser-path" id="browser-path" title="Current path">~</div>
+                <button class="gel-orb orb-xs" id="btn-pin" title="Pin this folder as home">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>☆
+                </button>
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button>
+            </div>
+            <!-- Search -->
+            <div class="browser-search-wrap">
+                <input type="text" class="browser-search" id="browser-search" placeholder="Search..." spellcheck="false"
+                    autocomplete="off">
+            </div>
+            <!-- File list -->
+            <div class="file-list-scroll" id="file-list">
+                <div class="file-empty-state">
+                    <div class="empty-icon">📁</div>
+                    <div class="empty-text">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="browser-renderer.js"></script>
+</body>
+
+</html>

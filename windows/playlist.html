@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Playlist</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-playlist-window">
+    <div class="blob-body blob-playlist-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <div class="blob-label">
+                <span class="label-text">PLAYLIST</span>
+                <button class="gel-orb orb-xs" id="btn-clear" title="Clear playlist">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>🗑
+                </button>
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button>
+            </div>
+            <div class="playlist-scroll" id="playlist-list">
+                <div class="playlist-empty">✦ empty ✦</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="playlist-renderer.js"></script>
+</body>
+
+</html>

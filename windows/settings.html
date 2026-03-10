@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Settings</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-settings-window">
+    <div class="blob-body blob-settings-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <!-- Header -->
+            <div class="blob-label">
+                <span class="label-text">SETTINGS</span>
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button>
+            </div>
+
+            <div class="settings-scroll">
+                <!-- Skin selector -->
+                <div class="settings-section">
+                    <label class="settings-label">Skin</label>
+                    <select id="skin-select" class="gel-select"></select>
+                </div>
+
+                <!-- EQ -->
+                <div class="settings-section">
+                    <label class="settings-label">Equalizer</label>
+                    <div class="eq-row">
+                        <div class="eq-band">
+                            <div class="eq-slider-wrap">
+                                <input type="range" min="-12" max="12" value="0" step="1" class="eq-slider" id="eq-bass">
+                            </div>
+                            <span class="eq-label">Bass</span>
+                        </div>
+                        <div class="eq-band">
+                            <div class="eq-slider-wrap">
+                                <input type="range" min="-12" max="12" value="0" step="1" class="eq-slider" id="eq-low-mid">
+                            </div>
+                            <span class="eq-label">Lo</span>
+                        </div>
+                        <div class="eq-band">
+                            <div class="eq-slider-wrap">
+                                <input type="range" min="-12" max="12" value="0" step="1" class="eq-slider" id="eq-mid">
+                            </div>
+                            <span class="eq-label">Mid</span>
+                        </div>
+                        <div class="eq-band">
+                            <div class="eq-slider-wrap">
+                                <input type="range" min="-12" max="12" value="0" step="1" class="eq-slider" id="eq-high-mid">
+                            </div>
+                            <span class="eq-label">Hi</span>
+                        </div>
+                        <div class="eq-band">
+                            <div class="eq-slider-wrap">
+                                <input type="range" min="-12" max="12" value="0" step="1" class="eq-slider" id="eq-treble">
+                            </div>
+                            <span class="eq-label">Air</span>
+                        </div>
+                    </div>
+                    <button class="gel-pill eq-reset" id="eq-reset">
+                        <div class="gel-pill-highlight"></div>Reset
+                    </button>
+                </div>
+
+                <!-- Theme Tinting -->
+                <div class="color-picker-section">
+                    <span class="settings-label">THEME TINTING</span>
+                    <div class="picker-container">
+                        <canvas id="hsv-rect" width="220" height="100"></canvas>
+                        <div id="hue-slider-wrap">
+                            <canvas id="hue-canvas" width="20" height="100"></canvas>
+                        </div>
+                    </div>
+                    <div class="picker-controls">
+                        <div class="color-preview"></div>
+                        <button class="gel-pill" id="btn-reset-color">
+                            <div class="gel-pill-highlight"></div>Reset Theme
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Links -->
+                <div class="settings-section settings-links">
+                    <button class="gel-pill settings-link" id="link-github">
+                        <div class="gel-pill-highlight"></div>🦑 GitHub
+                    </button>
+                    <button class="gel-pill settings-link" id="link-kofi">
+                        <div class="gel-pill-highlight"></div>☕ Ko-Fi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="settings-renderer.js"></script>
+</body>
+
+</html>

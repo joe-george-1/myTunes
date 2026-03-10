@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Player</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-player-window">
+    <div class="blob-body blob-player-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <!-- Close button -->
+            <div class="blob-label">
+                <span class="label-text"></span>
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button>
+            </div>
+            <!-- Display screen -->
+            <div class="player-display">
+                <div class="display-screen">
+                    <div class="track-title-marquee" id="track-title">
+                        <span>myTunes</span>
+                    </div>
+                    <div class="track-time" id="track-time">—:—</div>
+                    <canvas id="mini-viz" class="mini-visualizer"></canvas>
+                </div>
+            </div>
+
+            <!-- Seek -->
+            <div class="seek-wrapper">
+                <div class="seek-bar" id="seek-bar">
+                    <div class="seek-progress" id="seek-progress"></div>
+                    <div class="seek-handle"></div>
+                </div>
+            </div>
+
+            <!-- Transport orbs -->
+            <div class="transport-row">
+                <button class="gel-orb orb-sm" id="btn-prev" title="Previous">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>⏮
+                </button>
+                <button class="gel-orb orb-lg" id="btn-play" title="Play">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>
+                    <span class="play-icon">▶</span>
+                    <span class="pause-icon">⏸</span>
+                </button>
+                <button class="gel-orb orb-sm" id="btn-stop" title="Stop">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>⏹
+                </button>
+                <button class="gel-orb orb-sm" id="btn-next" title="Next">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>⏭
+                </button>
+            </div>
+
+            <!-- Volume + Modes -->
+            <div class="controls-row">
+                <div class="volume-pill">
+                    <span class="vol-icon">🔊</span>
+                    <div class="volume-track" id="volume-track">
+                        <div class="volume-fill" id="volume-fill"></div>
+                    </div>
+                </div>
+                <div class="mode-pills">
+                    <button class="gel-pill" id="btn-shuffle" title="Shuffle">⟳</button>
+                    <button class="gel-pill" id="btn-repeat" title="Repeat">∞</button>
+                </div>
+            </div>
+
+            <!-- Window toggle orbs -->
+            <div class="toggle-row">
+                <button class="gel-orb orb-toggle active" id="btn-toggle-browser" title="Toggle Browser">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>📂
+                </button>
+                <button class="gel-orb orb-toggle active" id="btn-toggle-playlist" title="Toggle Playlist">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>☰
+                </button>
+                <button class="gel-orb orb-toggle active" id="btn-toggle-viz" title="Toggle Visualizer">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>◎
+                </button>
+                <button class="gel-orb orb-toggle orb-github" id="btn-settings" title="Settings">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>⚙
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-element" preload="auto"></audio>
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="player-renderer.js"></script>
+</body>
+
+</html>
