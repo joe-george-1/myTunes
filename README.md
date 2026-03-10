@@ -58,3 +58,6 @@ Adding your own skins is as simple as creating a folder in the `skins/` director
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+*Made with Claude Opus 4.6 and Gemini 3.1 — March 2026*
