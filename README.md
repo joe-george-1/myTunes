@@ -2,15 +2,9 @@
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
-║              ███╗   ███╗██╗   ██╗████████╗██╗   ██╗             ║
-║              ████╗ ████║╚██╗ ██╔╝╚══██╔══╝██║   ██║             ║
-║              ██╔████╔██║ ╚████╔╝    ██║   ██║   ██║             ║
-║              ██║╚██╔╝██║  ╚██╔╝     ██║   ██║   ██║             ║
-║              ██║ ╚═╝ ██║   ██║      ██║   ╚██████╔╝             ║
-║              ╚═╝     ╚═╝   ╚═╝      ╚═╝    ╚═════╝              ║
-║                        ─── N E S ───                             ║
+║                        ─── myTunes ───                           ║
 ║                                                                  ║
-║           skinnable transparent desktop music player             ║
+║               customizable desktop music player                  ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
@@ -47,29 +41,29 @@
 ```
   ╭──────────────────────────────────────────────────────────╮
   │  ◈  Multi-window gel UI — player, browser, playlist,     │
-  │     visualizer, and settings as independent windows       │
-  │                                                           │
+  │     visualizer, and settings as independent windows      │
+  │                                                          │
   │  ◈  5 unique skins — Bliss, Cyber, Iron, Giger, Metro    │
-  │                                                           │
-  │  ◈  Global theme color picker — tint everything at once   │
-  │                                                           │
+  │                                                          │
+  │  ◈  Global theme color picker — tint everything at once  │
+  │                                                          │
   │  ◈  5-band EQ — Bass, Lo, Mid, Hi, Air                   │
-  │                                                           │
-  │  ◈  Album cover viewer — embedded artwork display         │
-  │                                                           │
-  │  ◈  Real-time visualizer — waveform + frequency bars      │
-  │                                                           │
-  │  ◈  Pixel-perfect skinnability — swap skins with PNGs     │
-  │                                                           │
-  │  ◈  Skin templates included — create your own             │
-  │                                                           │
-  │  ◈  Transparent frameless windows — desktop-native        │
-  │                                                           │
+  │                                                          │
+  │  ◈  Album cover viewer — embedded artwork display        │
+  │                                                          │
+  │  ◈  Real-time visualizer — waveform + frequency bars     │
+  │                                                          │
+  │  ◈  Pixel-perfect skinnability — swap skins with PNGs    │
+  │                                                          │
+  │  ◈  Skin templates included — create your own            │
+  │                                                          │
+  │  ◈  Transparent frameless windows — desktop-native       │
+  │                                                          │
   │  ◈  Local playback — mp3, flac, wav, ogg, m4a, aac       │
-  │                                                           │
-  │  ◈  Cross-platform — macOS, Windows, Linux                │
-  │                                                           │
-  │  ◈  Rust + Tauri backend — lightweight and fast           │
+  │                                                          │
+  │  ◈  Cross-platform — macOS, Windows, Linux               │
+  │                                                          │
+  │  ◈  Rust + Tauri backend — lightweight and fast          │
   ╰──────────────────────────────────────────────────────────╯
 ```
 
@@ -141,4 +135,4 @@ MIT License — see [LICENSE](LICENSE)
 
 ---
 
-*Made with Claude Opus 4.6 and Gemini 2.5 Pro — March 2026*
+*Made with Claude Opus 4.6 and Gemini Nano Banana — March 2026*
