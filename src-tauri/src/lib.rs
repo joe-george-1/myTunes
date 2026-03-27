@@ -1,16 +1,42 @@
 use base64::Engine;
+use lofty::file::TaggedFileExt;
+use lofty::picture::PictureType;
+use percent_encoding::percent_decode_str;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
+
+// ── Shared state for cover art path ──────────────────────────────────────────
+struct CoverArtState(Mutex<Option<String>>);
 
 // ── Audio extensions ────────────────────────────────────────────────────────
 const AUDIO_EXTENSIONS: &[&str] = &[
     ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm",
 ];
 
+// ── Cover art filenames (checked in order) ──────────────────────────────────
+const COVER_ART_NAMES: &[&str] = &[
+    "cover", "folder", "album", "front", "art", "artwork", "thumb",
+];
+const IMAGE_EXTENSIONS: &[&str] = &[".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".avif"];
+
 fn is_audio_ext(ext: &str) -> bool {
     AUDIO_EXTENSIONS.contains(&ext)
+}
+
+fn image_mime_for_ext(ext: &str) -> &'static str {
+    match ext {
+        ".jpg" | ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        ".bmp" => "image/bmp",
+        ".gif" => "image/gif",
+        ".tif" | ".tiff" => "image/tiff",
+        ".avif" => "image/avif",
+        _ => "image/jpeg",
+    }
 }
 
 fn mime_for_ext(ext: &str) -> &'static str {
@@ -67,6 +93,14 @@ pub struct SkinData {
     pub playlist: Option<String>,
     pub visualizer: Option<String>,
     pub settings: Option<String>,
+    #[serde(rename = "coverTopLeft")]
+    pub cover_top_left: Option<String>,
+    #[serde(rename = "coverTopRight")]
+    pub cover_top_right: Option<String>,
+    #[serde(rename = "coverBottomLeft")]
+    pub cover_bottom_left: Option<String>,
+    #[serde(rename = "coverBottomRight")]
+    pub cover_bottom_right: Option<String>,
 }
 
 // ── Commands ────────────────────────────────────────────────────────────────
@@ -166,6 +200,85 @@ fn read_file(path: String) -> FileResult {
     }
 }
 
+#[tauri::command]
+fn get_cover_art(path: String) -> Option<String> {
+    let dir = Path::new(&path);
+    if !dir.is_dir() {
+        return None;
+    }
+    // Look for common cover art filenames
+    if let Ok(entries) = fs::read_dir(dir) {
+        let files: Vec<_> = entries
+            .flatten()
+            .filter(|e| e.path().is_file())
+            .collect();
+
+        // Check known cover art names first (in priority order)
+        for cover_name in COVER_ART_NAMES {
+            for ext in IMAGE_EXTENSIONS {
+                let target = format!("{}{}", cover_name, ext);
+                if let Some(entry) = files.iter().find(|e| {
+                    e.file_name().to_string_lossy().to_lowercase() == target
+                }) {
+                    if let Ok(buf) = fs::read(entry.path()) {
+                        let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
+                        let mime = image_mime_for_ext(ext);
+                        return Some(format!("data:{};base64,{}", mime, encoded));
+                    }
+                }
+            }
+        }
+
+        // Fallback: any image file in the directory
+        for entry in &files {
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if IMAGE_EXTENSIONS.iter().any(|ext| name.ends_with(ext)) {
+                if let Ok(buf) = fs::read(entry.path()) {
+                    let ext = entry.path()
+                        .extension()
+                        .map(|e| format!(".{}", e.to_string_lossy().to_lowercase()))
+                        .unwrap_or_default();
+                    let mime = image_mime_for_ext(&ext);
+                    let encoded = base64::engine::general_purpose::STANDARD.encode(&buf);
+                    return Some(format!("data:{};base64,{}", mime, encoded));
+                }
+            }
+        }
+
+        // Fallback: extract embedded cover art from the first audio file
+        for entry in &files {
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            let ext = entry.path()
+                .extension()
+                .map(|e| format!(".{}", e.to_string_lossy().to_lowercase()))
+                .unwrap_or_default();
+            if !is_audio_ext(&ext) {
+                continue;
+            }
+            if let Ok(tagged_file) = lofty::read_from_path(entry.path()) {
+                // Check all tags for pictures (ID3, Vorbis, MP4, etc.)
+                for tag in tagged_file.tags() {
+                    let pictures = tag.pictures();
+                    // Prefer front cover, but take any picture
+                    let pic = pictures
+                        .iter()
+                        .find(|p| p.pic_type() == PictureType::CoverFront)
+                        .or_else(|| pictures.first());
+                    if let Some(picture) = pic {
+                        let mime_str = match picture.mime_type() {
+                            Some(mime) => mime.as_str(),
+                            None => "image/jpeg",
+                        };
+                        let encoded = base64::engine::general_purpose::STANDARD.encode(picture.data());
+                        return Some(format!("data:{};base64,{}", mime_str, encoded));
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 fn resolve_skins_dir(app: &AppHandle) -> PathBuf {
     // Try resource dir first (production builds)
     if let Ok(res) = app.path().resource_dir() {
@@ -217,6 +330,10 @@ fn load_skin(app: AppHandle, name: String) -> SkinData {
         playlist: load_png("playlist"),
         visualizer: load_png("visualizer"),
         settings: load_png("settings"),
+        cover_top_left: load_png("cover-top-left"),
+        cover_top_right: load_png("cover-top-right"),
+        cover_bottom_left: load_png("cover-bottom-left"),
+        cover_bottom_right: load_png("cover-bottom-right"),
     }
 }
 
@@ -253,37 +370,25 @@ fn close_window(app: AppHandle, label: String) {
     }
 }
 
+// force_clear_window removed — the resize hack caused ghosting rather than fixing it.
+// Proper CSS compositor hints (backface-visibility, transform: translateZ(0)) replace it.
+
 #[tauri::command]
-fn force_clear_window(app: AppHandle, label: String) {
-    if let Some(win) = app.get_webview_window(&label) {
-        // We know from previous testing that the ONLY thing that reliably forces the
-        // Linux compositor to drop its transparent buffer is a physical window resize.
-        // To avoid the dimension-corruption bug from before (where dynamically querying 
-        // the size yielded incorrect pixel ratios), we use the exact hardcoded dimensions.
-        let (width, height) = match label.as_str() {
-            "browser" => (400.0, 500.0),
-            "player" => (380.0, 530.0),
-            "playlist" => (350.0, 560.0),
-            "settings" => (380.0, 530.0),
-            "visualizer" => (440.0, 350.0),
-            _ => return,
-        };
-
-        // 1. Nudge the window size slightly to break the compositor cache
-        let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize {
-            width: width - 1.0,
-            height: height,
-        }));
-
-        // 2. Snap it back immediately to the exact, correct dimensions
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            let _ = win.set_size(tauri::Size::Logical(tauri::LogicalSize {
-                width,
-                height,
-            }));
-        });
+fn show_cover_art(app: AppHandle, dir_path: String) {
+    // Store the directory path so the coverviewer can pull it after loading
+    if let Some(state) = app.try_state::<CoverArtState>() {
+        *state.0.lock().unwrap() = Some(dir_path);
     }
+    if let Some(win) = app.get_webview_window("coverviewer") {
+        let _ = win.show();
+        let _ = win.set_focus();
+    }
+}
+
+#[tauri::command]
+fn get_pending_cover_path(app: AppHandle) -> Option<String> {
+    app.try_state::<CoverArtState>()
+        .and_then(|state| state.0.lock().unwrap().clone())
 }
 
 #[tauri::command]
@@ -327,15 +432,102 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_dir,
             read_file,
+            get_cover_art,
             list_skins,
             load_skin,
-            force_clear_window,
             toggle_window,
             close_window,
+            show_cover_art,
+            get_pending_cover_path,
             open_external,
             window_drag,
             get_window_label,
         ])
+        .manage(CoverArtState(Mutex::new(None)))
+        .register_uri_scheme_protocol("audiofile", |_app, request| {
+            // Custom protocol: audiofile://localhost/<encoded-path>
+            // Serves audio files directly to <audio> elements, avoiding base64 IPC.
+            let uri = request.uri().to_string();
+            // WebKitGTK may omit "localhost" or vary the authority in custom schemes.
+            let path_part = uri
+                .strip_prefix("audiofile://localhost/")
+                .or_else(|| uri.strip_prefix("audiofile://localhost"))
+                .or_else(|| uri.strip_prefix("audiofile:///"))
+                .or_else(|| uri.strip_prefix("audiofile://"))
+                .unwrap_or("");
+            let decoded = percent_decode_str(path_part)
+                .decode_utf8_lossy()
+                .to_string();
+            // On Linux the path must be absolute
+            let file_path_str = if decoded.starts_with('/') {
+                decoded.clone()
+            } else {
+                format!("/{}", decoded)
+            };
+            let file_path = Path::new(&file_path_str);
+
+            let ext = file_path
+                .extension()
+                .map(|e| format!(".{}", e.to_string_lossy().to_lowercase()))
+                .unwrap_or_default();
+            let mime = mime_for_ext(&ext);
+
+            // Read file
+            let data = match fs::read(file_path) {
+                Ok(d) => d,
+                Err(_) => {
+                    return tauri::http::Response::builder()
+                        .status(404)
+                        .header("Access-Control-Allow-Origin", "*")
+                        .body(Vec::new())
+                        .unwrap();
+                }
+            };
+
+            let total_len = data.len();
+
+            // Check for Range header (needed for <audio> seeking)
+            let range_header = request
+                .headers()
+                .get("range")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+
+            if range_header.starts_with("bytes=") {
+                let range_spec = &range_header[6..];
+                let parts: Vec<&str> = range_spec.split('-').collect();
+                let start: usize = parts[0].parse().unwrap_or(0);
+                let end: usize = if parts.len() > 1 && !parts[1].is_empty() {
+                    parts[1].parse().unwrap_or(total_len - 1)
+                } else {
+                    total_len - 1
+                };
+                let end = end.min(total_len - 1);
+                let slice = data[start..=end].to_vec();
+
+                tauri::http::Response::builder()
+                    .status(206)
+                    .header("Content-Type", mime)
+                    .header("Content-Length", slice.len().to_string())
+                    .header(
+                        "Content-Range",
+                        format!("bytes {}-{}/{}", start, end, total_len),
+                    )
+                    .header("Accept-Ranges", "bytes")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .body(slice)
+                    .unwrap()
+            } else {
+                tauri::http::Response::builder()
+                    .status(200)
+                    .header("Content-Type", mime)
+                    .header("Content-Length", total_len.to_string())
+                    .header("Accept-Ranges", "bytes")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .body(data)
+                    .unwrap()
+            }
+        })
         .setup(|app| {
             // Send initial visibility state to player once it's ready
             let app_handle = app.handle().clone();

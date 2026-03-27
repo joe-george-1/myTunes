@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cover Art</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="blob-window blob-coverviewer-window">
+    <div class="blob-body blob-coverviewer-shape">
+        <div class="blob-bg"></div>
+        <div class="gel-highlight"></div>
+        <div class="scanlines"></div>
+        <div class="blob-inner">
+            <div class="coverviewer-header">
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>✕
+                </button>
+            </div>
+            <div class="coverviewer-body">
+                <img class="coverviewer-img" id="cover-img" alt="Album cover" draggable="false">
+            </div>
+        </div>
+        <img class="cover-corner corner-tl" alt="" draggable="false">
+        <img class="cover-corner corner-tr" alt="" draggable="false">
+        <img class="cover-corner corner-bl" alt="" draggable="false">
+        <img class="cover-corner corner-br" alt="" draggable="false">
+        <div class="coverviewer-resize resize-right" data-resize="right"></div>
+        <div class="coverviewer-resize resize-bottom" data-resize="bottom"></div>
+        <div class="coverviewer-resize resize-corner" data-resize="corner"></div>
+    </div>
+
+    <script src="gel-bridge.js"></script>
+    <script src="skin-loader.js"></script>
+    <script src="coverviewer-renderer.js"></script>
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 {
     "identifier": "main-capability",
     "description": "Main capability for myTunes",
-    "windows": ["player", "browser", "playlist", "visualizer", "settings"],
+    "windows": ["player", "browser", "playlist", "visualizer", "settings", "coverviewer"],
     "permissions": [
         "core:default",
         "core:event:default",
@@ -17,6 +17,7 @@
         "core:window:allow-outer-position",
         "core:window:allow-is-visible",
         "core:window:allow-set-focus",
+        "core:window:allow-set-size",
         "core:webview:default"
     ]
 }

@@ -34,7 +34,7 @@ let dragOverIdx = -1;
 // ── IPC: receive tracks from browser ────────────────────────
 window.gel.onAddTracks((newTracks) => {
     newTracks.forEach(t => {
-        tracks.push({ name: t.name, type: t.type, data: t.data });
+        tracks.push({ name: t.name, path: t.path });
     });
 
     const playNow = newTracks.find(t => t.playImmediately);
@@ -95,7 +95,7 @@ function playTrack(idx) {
     if (idx < 0 || idx >= tracks.length) return;
     currentIndex = idx;
     const track = tracks[idx];
-    window.gel.playTrack({ name: track.name, type: track.type, data: track.data });
+    window.gel.playTrack({ name: track.name, path: track.path });
     renderPlaylist();
 }
 
@@ -190,7 +190,7 @@ function renderPlaylist() {
       <span class="pl-grip" title="Drag to reorder">⠿</span>
       <span class="pl-num">${String(idx + 1).padStart(2, '0')}</span>
       <span class="pl-name">${cleanName(track.name)}</span>
-      <span class="pl-rm" title="Remove selected">✕</span>
+      <span class="pl-rm" title="Remove">\uff0d</span>
     `;
 
         // ── Drag reorder handlers ────────────────────────
@@ -285,6 +285,14 @@ function renderPlaylist() {
             }
             if (e.target.classList.contains('pl-grip')) return; // Don't select on grip click
             handleSelect(idx, e);
+        });
+
+        // Hover → highlight
+        item.addEventListener('mouseenter', () => {
+            item.style.background = 'rgba(255, 255, 255, 0.1)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.background = '';
         });
 
         // Double click → play

@@ -7,7 +7,7 @@
  *   - Shift+click → range select
  *   - Ctrl+click → toggle select
  *   - Ctrl+Shift+click → extend range
- *   - ＋ button → add all selected (or just that one) to playlist
+ *   - + button → add all selected (or just that one) to playlist
  *   - Double-click audio → direct play in Player (bypass playlist)
  *   - Track ends → auto-play next in folder
  *   - Prev/Next from player → navigate in folder when playlist empty
@@ -27,6 +27,7 @@ let allEntries = [];           // all entries in current folder (dirs + audio)
 let currentEntries = [];       // audio files only
 let currentPlayingIndex = -1;
 let directPlayActive = false;
+let currentCoverArt = null;    // base64 data URL of cover art for current dir
 
 // ── Selection state ─────────────────────────────────────────
 let selectedIndices = new Set();  // indices into currentEntries (audio only)
@@ -45,7 +46,7 @@ function clearPinnedDir() {
 }
 function updatePinIcon() {
     const pinned = getPinnedDir();
-    btnPin.textContent = (pinned && pinned === currentPath) ? '★' : '☆';
+    btnPin.textContent = (pinned && pinned === currentPath) ? '\u2605' : '\u2606';
     btnPin.title = (pinned && pinned === currentPath) ? 'Unpin this folder' : 'Pin this folder as home';
 }
 
@@ -99,19 +100,22 @@ async function navigate(dirPath) {
     anchorIndex = -1;
     await loadDirectory(dirPath);
     fileListEl.scrollTop = 0; // Start at top of new directory
-    window.gel.nuclearFlush(); // Heavy reset for Linux skins
 }
 
 async function loadDirectory(dirPath) {
-    fileListEl.innerHTML = '<div class="file-empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading...</div></div>';
-    const result = await window.gel.readDir(dirPath);
+    fileListEl.innerHTML = '<div class="file-empty-state"><div class="empty-icon">\u23f3</div><div class="empty-text">Loading...</div></div>';
+    const [result, coverArt] = await Promise.all([
+        window.gel.readDir(dirPath),
+        window.gel.getCoverArt(dirPath)
+    ]);
     if (result.error) {
-        fileListEl.innerHTML = `<div class="file-empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${result.error}</div></div>`;
+        fileListEl.innerHTML = `<div class="file-empty-state"><div class="empty-icon">\u26a0\ufe0f</div><div class="empty-text">${result.error}</div></div>`;
         return;
     }
     currentPath = result.path;
     allEntries = result.entries;
     currentEntries = result.entries.filter(e => e.isAudio);
+    currentCoverArt = coverArt || null;
     updatePathDisplay(result.path);
     searchInput.value = '';
     renderEntries(result.entries);
@@ -158,9 +162,8 @@ function updatePathDisplay(fullPath) {
     const home = fullPath.match(/^\/home\/[^/]+/)?.[0] || '';
     const display = home ? fullPath.replace(home, '~') : fullPath;
     const parts = display.split('/');
-    pathEl.textContent = parts.length > 3 ? '…/' + parts.slice(-2).join('/') : display;
+    pathEl.textContent = parts.length > 3 ? '\u2026/' + parts.slice(-2).join('/') : display;
     pathEl.title = fullPath;
-    window.gel.forceClearWindow(); // Fix muddy text on Linux
 }
 
 // ── Selection logic ─────────────────────────────────────────
@@ -198,13 +201,10 @@ function handleAudioSelect(audioIdx, e) {
     }
     lastClickedIndex = audioIdx;
     updateSelectionUI();
-    // Only clear if selecting a lot or toggling to avoid flicker
-    if (e.shiftKey || e.ctrlKey) window.gel.forceClearWindow(); 
 }
 
 function updateSelectionUI() {
     const audioItems = fileListEl.querySelectorAll('.audio-item');
-    let audioIdx = 0;
     audioItems.forEach(item => {
         const idx = parseInt(item.dataset.audioIdx);
         item.classList.toggle('selected', selectedIndices.has(idx));
@@ -215,7 +215,7 @@ function updateSelectionUI() {
 function renderEntries(entries) {
     fileListEl.innerHTML = '';
     if (entries.length === 0) {
-        fileListEl.innerHTML = '<div class="file-empty-state"><div class="empty-icon">🔇</div><div class="empty-text">No audio files here</div></div>';
+        fileListEl.innerHTML = '<div class="file-empty-state"><div class="empty-icon">\ud83d\udd07</div><div class="empty-text">No audio files here</div></div>';
         return;
     }
 
@@ -230,34 +230,47 @@ function renderEntries(entries) {
             if (selectedIndices.has(audioIdx)) item.classList.add('selected');
         }
 
-        const icon = entry.isDir ? '📁' : '🎵';
-        item.innerHTML = `
-          <span class="file-icon">${icon}</span>
-          <span class="file-name">${entry.isDir ? entry.name : cleanName(entry.name)}</span>
-          ${entry.isAudio ? '<span class="file-add" title="Add to playlist">＋</span>' : ''}
-        `;
+        const icon = entry.isDir ? '\ud83d\udcc1' : '\ud83c\udfb5';
+        if (entry.isAudio && currentCoverArt) {
+            item.innerHTML = `
+              <img class="file-icon cover-thumb" src="${currentCoverArt}" alt="" title="Click to view cover art">
+              <span class="file-name">${cleanName(entry.name)}</span>
+              <span class="file-add" title="Add to playlist">\uff0b</span>
+            `;
+            item.querySelector('.cover-thumb').addEventListener('click', (e) => {
+                e.stopPropagation();
+                showCoverArt(currentCoverArt);
+            });
+        } else {
+            item.innerHTML = `
+              <span class="file-icon">${icon}</span>
+              <span class="file-name">${entry.isDir ? entry.name : cleanName(entry.name)}</span>
+              ${entry.isAudio ? '<span class="file-add" title="Add to playlist">\uff0b</span>' : ''}
+            `;
+        }
 
         if (entry.isDir) {
             item.addEventListener('click', () => navigate(entry.path));
+            item.addEventListener('mouseenter', () => {
+                item.style.background = 'rgba(255, 255, 255, 0.1)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.background = '';
+            });
         } else if (entry.isAudio) {
             const audioIdx = currentEntries.indexOf(entry);
-            
-            // Interaction stabilization for Linux
-            item.addEventListener('mouseenter', () => {
-                if (window.gel.isLinux) window.gel.forceClearWindow();
-            });
 
-            // ＋ button → add selected (or just this one) to playlist
+            // + button → add selected (or just this one) to playlist
             const addBtn = item.querySelector('.file-add');
             if (addBtn) {
-                addBtn.addEventListener('click', async (e) => {
+                addBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (selectedIndices.has(audioIdx) && selectedIndices.size > 1) {
                         // Add all selected
-                        await addMultipleToPlaylist([...selectedIndices].sort((a, b) => a - b));
+                        addMultipleToPlaylist([...selectedIndices].sort((a, b) => a - b));
                     } else {
                         // Add just this one
-                        await addToPlaylist(entry.path, entry.name);
+                        addToPlaylist(entry.path, entry.name);
                         item.classList.add('added');
                         setTimeout(() => item.classList.remove('added'), 600);
                     }
@@ -270,12 +283,20 @@ function renderEntries(entries) {
                 handleAudioSelect(audioIdx, e);
             });
 
+            // Hover → highlight
+            item.addEventListener('mouseenter', () => {
+                item.style.background = 'rgba(255, 255, 255, 0.1)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.background = '';
+            });
+
             // Double-click → direct play
-            item.addEventListener('dblclick', async () => {
+            item.addEventListener('dblclick', () => {
                 currentPlayingIndex = audioIdx;
                 directPlayActive = true;
                 selectedIndices.clear();
-                await directPlay(entry.path, entry.name);
+                directPlay(entry.path, entry.name);
                 highlightPlaying();
             });
         }
@@ -293,42 +314,34 @@ function highlightPlaying() {
 }
 
 // ── Direct play → Player ────────────────────────────────────
-async function directPlay(filePath, fileName) {
-    const fileData = await window.gel.readFile(filePath);
-    if (fileData.error) return;
+// Now sends just the path — no file reading, no base64 encoding.
+function directPlay(filePath, fileName) {
     window.gel.directPlay({
-        name: fileData.name,
-        type: fileData.type,
-        data: fileData.data
+        name: fileName,
+        path: filePath
     });
 }
 
 // ── Add to playlist ─────────────────────────────────────────
-async function addToPlaylist(filePath, fileName) {
-    const fileData = await window.gel.readFile(filePath);
-    if (fileData.error) return;
+// Now sends just the path — instant, no IPC bottleneck.
+function addToPlaylist(filePath, fileName) {
     window.gel.addTracks([{
-        name: fileData.name,
-        type: fileData.type,
-        data: fileData.data,
+        name: fileName,
+        path: filePath,
         playImmediately: false
     }]);
 }
 
-async function addMultipleToPlaylist(audioIndices) {
-    const tracksToAdd = [];
-    for (const idx of audioIndices) {
-        const entry = currentEntries[idx];
-        if (!entry) continue;
-        const fileData = await window.gel.readFile(entry.path);
-        if (fileData.error) continue;
-        tracksToAdd.push({
-            name: fileData.name,
-            type: fileData.type,
-            data: fileData.data,
+function addMultipleToPlaylist(audioIndices) {
+    const tracksToAdd = audioIndices
+        .map(idx => currentEntries[idx])
+        .filter(Boolean)
+        .map(entry => ({
+            name: entry.name,
+            path: entry.path,
             playImmediately: false
-        });
-    }
+        }));
+
     if (tracksToAdd.length > 0) {
         window.gel.addTracks(tracksToAdd);
         // Flash all selected items
@@ -417,6 +430,12 @@ searchInput.addEventListener('keydown', (e) => {
 // ── Helpers ─────────────────────────────────────────────────
 function cleanName(name) {
     return name.replace(/\.(mp3|wav|ogg|flac|aac|m4a|wma|opus|webm)$/i, '');
+}
+
+// ── Cover art viewer ────────────────────────────────────────
+function showCoverArt(coverDataUrl) {
+    // Pass the directory path so the coverviewer can fetch the art itself
+    window.gel.showCoverArt(currentPath);
 }
 
 // ── Close button ────────────────────────────────────────────

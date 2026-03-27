@@ -70,9 +70,10 @@ body {
   user-select: none;
   -webkit-user-select: none;
   cursor: grab;
-  /* Ultimate WebKitGTK fix: forces local offscreen bitmap flattening, 
-     preventing the GPU compositor from dropping transparent frames or stacking z-layers randomly */
-  filter: opacity(0.999);
+  /* Layer promotion without filter — backface-visibility + translateZ(0) force
+     a dedicated compositor layer without the stale-frame issues of filter hacks */
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .blob-body.dragging {
@@ -95,21 +96,27 @@ body {
 .blob-bg {
   position: absolute;
   inset: 0;
-  border: 1.5px solid rgba(150, 130, 180, 0.18);
+  border: none;
   border-radius: inherit;
   z-index: -2;
   pointer-events: none;
+  background: transparent;
 }
 
-/* Skin mode — PNG casing replaces CSS blob */
+/* Skin mode — background is set inline by skin-loader.js.
+   Only structural overrides needed here. */
 .blob-body.skin-active .blob-bg {
-  background: var(--skin-image) center/100% 100% no-repeat !important;
   border-radius: 0 !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* LINUX STABILIZATION — Forces dedicated layers and kills ghosting transitions */
+/* Hide the gel-highlight dome when skin is active */
+.blob-body.skin-active .gel-highlight {
+  display: none !important;
+}
+
+/* LINUX STABILIZATION — kill box-shadows and text-shadows that ghost */
 html.is-linux .player-display,
 html.is-linux .transport-row,
 html.is-linux .file-list-scroll,
@@ -120,7 +127,6 @@ html.is-linux .file-item,
 html.is-linux .gel-pill,
 html.is-linux .playlist-item {
   box-shadow: none !important;
-  transform: translateZ(0); /* Force layer */
 }
 
 html.is-linux .track-title-marquee,
@@ -130,21 +136,16 @@ html.is-linux .label-text {
   text-shadow: none !important;
 }
 
-/* Allow scaling but keep it snappy on Linux */
-html.is-linux .gel-orb:hover,
-html.is-linux .gel-pill:hover,
-html.is-linux .file-item:hover {
-  transition: transform 0.1s ease-out !important;
-}
-
 /* F5 template export: hide blob for skeleton capture */
 .blob-body.template-export-skeleton .blob-bg {
   background: transparent !important;
   box-shadow: none !important;
 }
 
-/* Gel specular highlight dome */
+/* Gel specular highlight dome — hidden by default (transparent windows).
+   Only shown by skin-loader when needed. */
 .gel-highlight {
+  display: none;
   position: absolute;
   top: 1px;
   left: 2px;
@@ -209,12 +210,32 @@ html.is-linux .file-item:hover {
 
 .blob-player-shape .blob-bg {
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(50, 55, 60, 0.85) 0%, rgba(100, 105, 115, 0.85) 45%, rgba(160, 165, 175, 0.85) 80%, rgba(230, 235, 245, 0.85) 100%);
-  box-shadow:
-    0 -1px 1px rgba(255, 255, 255, 0.4),
-    0 16px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── COVER VIEWER ─────────────────── */
+.blob-coverviewer-shape {
+  padding: 0;
+}
+
+.blob-coverviewer-shape .blob-bg {
+  border-radius: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.blob-coverviewer-shape .gel-highlight,
+.blob-coverviewer-shape .scanlines {
+  display: none;
+}
+
+.blob-coverviewer-shape .blob-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 /* ── BROWSER ───────────────────── */
@@ -224,12 +245,8 @@ html.is-linux .file-item:hover {
 
 .blob-browser-shape .blob-bg {
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(50, 55, 60, 0.85) 0%, rgba(100, 105, 115, 0.85) 45%, rgba(160, 165, 175, 0.85) 80%, rgba(230, 235, 245, 0.85) 100%);
-  box-shadow:
-    0 -1px 1px rgba(255, 255, 255, 0.4),
-    0 16px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ── PLAYLIST ──────────────────────── */
@@ -239,12 +256,8 @@ html.is-linux .file-item:hover {
 
 .blob-playlist-shape .blob-bg {
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(50, 55, 60, 0.85) 0%, rgba(100, 105, 115, 0.85) 45%, rgba(160, 165, 175, 0.85) 80%, rgba(230, 235, 245, 0.85) 100%);
-  box-shadow:
-    0 -1px 1px rgba(255, 255, 255, 0.4),
-    0 16px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ── VISUALIZER ──────────────────────── */
@@ -254,12 +267,8 @@ html.is-linux .file-item:hover {
 
 .blob-viz-shape .blob-bg {
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(50, 55, 60, 0.85) 0%, rgba(100, 105, 115, 0.85) 45%, rgba(160, 165, 175, 0.85) 80%, rgba(230, 235, 245, 0.85) 100%);
-  box-shadow:
-    0 -1px 1px rgba(255, 255, 255, 0.4),
-    0 16px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -362,16 +371,16 @@ html.is-linux .file-item:hover {
   width: 16px;
   height: 16px;
   /* Soft Glass Horizon: dark on top, light on bottom (Tinted) */
-  background: linear-gradient(180deg, 
-    hsla(var(--theme-h), var(--theme-s), 60%, 1) 0%, 
-    hsla(var(--theme-h), var(--theme-s), 75%, 1) 48%, 
-    #ffffff 50%, 
-    hsla(var(--theme-h), var(--theme-s), 95%, 1) 100%);
+  background: linear-gradient(180deg,
+      hsla(var(--theme-h), var(--theme-s), 60%, 1) 0%,
+      hsla(var(--theme-h), var(--theme-s), 75%, 1) 48%,
+      #ffffff 50%,
+      hsla(var(--theme-h), var(--theme-s), 95%, 1) 100%);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-top: 1.5px solid #fff;
   border-radius: 50%;
   transform: translateY(-50%);
-  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.4);
+  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.2), 0 2px 5px rgba(0, 0, 0, 0.4);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -437,6 +446,26 @@ html.is-linux .file-item:hover {
   gap: 4px;
 }
 
+.mode-pills .gel-pill {
+  font-size: 11px;
+  padding: 5px 14px;
+  opacity: 0.85;
+}
+
+.mode-pills .gel-pill:hover {
+  opacity: 1;
+  background: var(--theme-color);
+  color: #fff;
+}
+
+.mode-pills .gel-pill.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--accent);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--accent-glow);
+}
+
 /* ═══════════════════════════════════════════════════════════
    GEL ORBS & PILLS
    ═══════════════════════════════════════════════════════════ */
@@ -461,22 +490,30 @@ html.is-linux .file-item:hover {
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: inherit;
-  background: linear-gradient(180deg, 
-    hsla(var(--theme-h), var(--theme-s), 35%, 0.85) 0%, 
-    hsla(var(--theme-h), var(--theme-s), 80%, 0.85) 100%);
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+  background: linear-gradient(180deg,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.35), 0.85) 0%,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.80), 0.85) 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.5);
   z-index: -1;
   pointer-events: none;
-  transform: translateZ(0); /* Force layer */
+  transform: translateZ(0);
+  /* Force layer */
 }
 
 /* Structural Icon Toggles */
-.play-icon, .pause-icon {
+.play-icon,
+.pause-icon {
   display: none;
   pointer-events: none;
 }
-#btn-play:not(.playing) .play-icon { display: block; }
-#btn-play.playing .pause-icon { display: block; }
+
+#btn-play:not(.playing) .play-icon {
+  display: block;
+}
+
+#btn-play.playing .pause-icon {
+  display: block;
+}
 
 
 /* The highlight dome */
@@ -540,7 +577,7 @@ html.is-linux .file-item:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0,0,0,0.4);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.4);
   transition: transform 0.2s;
   transform: translateZ(0);
 }
@@ -559,11 +596,12 @@ html.is-linux .file-item:hover {
 
 .gel-pill:hover {
   transform: scale(1.05);
-  background: linear-gradient(180deg, 
-    hsla(var(--theme-h), var(--theme-s), 30%, 0.85) 0%, 
-    hsla(var(--theme-h), var(--theme-s), 80%, 0.85) 100%);
+  background: linear-gradient(180deg,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.30), 0.85) 0%,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.80), 0.85) 100%);
   color: #fff;
 }
+
 /* DISABLING TRANSITIONS ON LINUX TO PREVENT GHOSTING */
 /* (Removed scaling block to restore effects) */
 
@@ -579,7 +617,6 @@ html.is-linux .file-item:hover {
 .gel-orb.playing {
   animation: pulse-glow 2s ease-in-out infinite;
   background: rgba(255, 255, 255, 0.2);
-  will-change: transform, opacity, filter;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -613,7 +650,7 @@ html.is-linux .file-item:hover {
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-top: 1.5px solid #fff;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .file-item {
@@ -625,9 +662,11 @@ html.is-linux .file-item:hover {
   font-size: 12px;
   color: var(--text);
   border-bottom: 1px solid rgba(255, 255, 255, 0.025);
-  backface-visibility: hidden; /* Force layer for Linux */
+  backface-visibility: hidden;
+  /* Force layer for Linux */
   transform: translateZ(0);
 }
+
 body.is-linux .file-item {
   transition: none !important;
 }
@@ -637,9 +676,8 @@ body.is-linux .file-item {
   background: rgba(255, 255, 255, 0.15);
   padding-left: 16px;
 }
-body.is-linux .file-item:hover {
-  transform: scale(1.02); /* Subtle scale for Linux items */
-}
+
+/* body.is-linux .file-item:hover — removed, hover managed by JS */
 
 
 .file-item .file-icon {
@@ -717,7 +755,7 @@ body.is-linux .file-item:hover {
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-top: 1.5px solid #fff;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .playlist-empty {
@@ -742,6 +780,7 @@ body.is-linux .file-item:hover {
 
 .playlist-item:hover {
   background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.015);
 }
 
 .playlist-item.selected {
@@ -776,21 +815,23 @@ body.is-linux .file-item:hover {
 }
 
 .playlist-item .pl-rm {
-  opacity: 0;
-  font-size: 10px;
-  color: var(--text-dim);
+  opacity: 0.5;
+  font-size: 14px;
+  color: #fff;
   cursor: pointer;
   transition: opacity 0.15s;
   flex-shrink: 0;
+  padding: 0 2px;
 }
 
 .playlist-item:hover .pl-rm {
-  opacity: 0.5;
+  opacity: 0.8;
 }
 
 .playlist-item .pl-rm:hover {
   opacity: 1;
-  color: #e88;
+  color: #fff;
+  transform: scale(1.3);
 }
 
 /* Drag grip handle */
@@ -813,6 +854,7 @@ body.is-linux .file-item:hover {
 .playlist-item .pl-grip:hover {
   opacity: 0.8;
   color: var(--accent);
+  transform: scale(1.3);
 }
 
 /* Drag in progress */
@@ -874,12 +916,15 @@ body.is-linux .file-item:hover {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
-    filter: brightness(1) drop-shadow(0 0 4px rgba(255,255,255,0.2));
+
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
     opacity: 0.95;
   }
+
   50% {
-    filter: brightness(1.2) drop-shadow(0 0 10px rgba(255,255,255,0.4));
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
     opacity: 1;
   }
 }
@@ -923,6 +968,7 @@ body.is-linux .file-item:hover {
 
 .orb-toggle:hover {
   opacity: 1;
+  transform: scale(1.15);
 }
 
 .orb-github {
@@ -933,6 +979,7 @@ body.is-linux .file-item:hover {
 .orb-github:hover {
   opacity: 1;
   box-shadow: 0 0 10px rgba(100, 180, 220, 0.25);
+  transform: scale(1.15);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -967,7 +1014,8 @@ body.is-linux .file-item:hover {
   flex-direction: column;
   gap: 16px;
   padding: 4px 0;
-  overflow: hidden; /* Increased window height makes scrolling unnecessary */
+  overflow: hidden;
+  /* Increased window height makes scrolling unnecessary */
 }
 
 .settings-scroll::-webkit-scrollbar,
@@ -989,7 +1037,7 @@ body.is-linux .file-item:hover {
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-top: 1.5px solid #fff;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .settings-header {
@@ -1008,7 +1056,7 @@ body.is-linux .file-item:hover {
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
 .settings-label {
@@ -1053,7 +1101,7 @@ body.is-linux .file-item:hover {
   justify-content: space-around;
   align-items: flex-end;
   gap: 4px;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .eq-band {
@@ -1100,15 +1148,16 @@ body.is-linux .file-item:hover {
   width: 16px;
   height: 16px;
   /* Correct orientation for rotated element: 90deg logical = vertical visual (Tinted) */
-  background: linear-gradient(90deg, 
-    hsla(var(--theme-h), var(--theme-s), 95%, 1) 0%, 
-    #ffffff 50%, 
-    hsla(var(--theme-h), var(--theme-s), 75%, 1) 52%, 
-    hsla(var(--theme-h), var(--theme-s), 60%, 1) 100%);
+  background: linear-gradient(90deg,
+      hsla(var(--theme-h), var(--theme-s), 95%, 1) 0%,
+      #ffffff 50%,
+      hsla(var(--theme-h), var(--theme-s), 75%, 1) 52%,
+      hsla(var(--theme-h), var(--theme-s), 60%, 1) 100%);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-left: 1.5px solid #fff; /* Becomes top border after -90deg rotation */
+  border-left: 1.5px solid #fff;
+  /* Becomes top border after -90deg rotation */
   border-radius: 50%;
-  box-shadow: inset -1px 0 2px rgba(0,0,0,0.2), 2px 0 5px rgba(0,0,0,0.4);
+  box-shadow: inset -1px 0 2px rgba(0, 0, 0, 0.2), 2px 0 5px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
@@ -1120,11 +1169,14 @@ body.is-linux .file-item:hover {
   align-self: center;
   font-size: 9px;
   padding: 3px 14px;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
 .eq-reset:hover {
   opacity: 1;
+  transform: scale(1.08);
+  background: var(--theme-color);
+  color: #fff;
 }
 
 /* Links */
@@ -1132,7 +1184,8 @@ body.is-linux .file-item:hover {
   flex-direction: row;
   justify-content: center;
   gap: 10px;
-  padding-top: 6px;
+  padding-top: 4px;
+  margin-top: -4px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1144,26 +1197,45 @@ body.is-linux .file-item:hover {
 
 .settings-link:hover {
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+  background: var(--theme-color);
+  color: #fff;
 }
 
 .blob-settings-shape {
-  padding: 0; /* Let inner handle it */
+  padding: 0;
+  /* Let inner handle it */
   width: 100%;
   height: 100%;
 }
 
 .blob-settings-shape .blob-inner {
-  padding: 30px 24px 20px;
+  padding: 80px 64px 48px;
+  position: relative;
+  z-index: 1;
 }
 
-.blob-settings-shape .blob-bg {
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(50, 55, 60, 0.85) 0%, rgba(100, 105, 115, 0.85) 45%, rgba(160, 165, 175, 0.85) 80%, rgba(230, 235, 245, 0.85) 100%);
-  box-shadow:
-    0 -1px 1px rgba(255, 255, 255, 0.4),
-    0 16px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+/* Settings skin: a plain <img> element — WebKitGTK renders decoded
+   bitmaps without re-compositing on sibling repaints. */
+.settings-skin-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: none;
+}
+
+/* Kill all CSS-painted decorative layers in settings */
+.blob-settings-shape .blob-bg,
+.blob-settings-shape .gel-highlight,
+.blob-settings-shape .scanlines {
+  opacity: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  visibility: hidden !important;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1223,12 +1295,16 @@ body.is-linux .file-item:hover {
 #btn-reset-color {
   font-size: 8px;
   padding: 2px 8px;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
 #btn-reset-color:hover {
   opacity: 1;
+  transform: scale(1.08);
+  background: var(--theme-color);
+  color: #fff;
 }
+
 .browser-nav {
   display: flex;
   align-items: center;
@@ -1296,6 +1372,7 @@ body.is-linux .file-item:hover {
 .dir-item:hover {
   background: rgba(100, 160, 200, 0.08) !important;
   padding-left: 16px;
+  transform: scale(1.015);
 }
 
 .dir-item .file-icon {
@@ -1303,10 +1380,14 @@ body.is-linux .file-item:hover {
 }
 
 /* ── Audio items ─────────────────────────────────────────── */
+.audio-item:hover {
+  transform: scale(1.015);
+}
+
 .audio-item .file-add {
   font-size: 14px;
-  opacity: 0;
-  color: var(--accent);
+  opacity: 0.5;
+  color: #fff;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
   flex-shrink: 0;
@@ -1314,7 +1395,7 @@ body.is-linux .file-item:hover {
 }
 
 .audio-item:hover .file-add {
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .audio-item .file-add:hover {
@@ -1346,6 +1427,102 @@ body.is-linux .file-item:hover {
   margin-left: 2px;
 }
 
+/* ── Cover art thumbnail ─────────────────────────────────── */
+.cover-thumb {
+  width: 18px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+.cover-thumb:hover {
+  opacity: 1;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+/* ── Cover art viewer window ─────────────────────────────── */
+.coverviewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 6px;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+
+.coverviewer-header:active {
+  cursor: grabbing;
+}
+
+.coverviewer-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.coverviewer-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* ── Coverviewer corner adornments ──────────────────────── */
+.cover-corner {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 5;
+  display: none;
+  border: none;
+  background: transparent;
+}
+
+.cover-corner.corner-tl { top: 0; left: 0; }
+.cover-corner.corner-tr { top: 0; right: 0; }
+.cover-corner.corner-bl { bottom: 0; left: 0; }
+.cover-corner.corner-br { bottom: 0; right: 0; }
+
+/* ── Coverviewer resize handles ──────────────────────────── */
+.coverviewer-resize {
+  position: absolute;
+  z-index: 10;
+}
+
+.coverviewer-resize.resize-right {
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.coverviewer-resize.resize-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.coverviewer-resize.resize-corner {
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  cursor: se-resize;
+  z-index: 11;
+}
+
 @keyframes pulse-add {
   0% {
     transform: scale(1);
@@ -1358,4 +1535,235 @@ body.is-linux .file-item:hover {
   100% {
     transform: scale(1);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LINUX WEBKITGTK — transparent window fixes
+
+   WebKitGTK doesn't repaint transparent windows properly.
+   Every repaint composites on top of old frames without clearing.
+   This causes cumulative brightening and ghost artifacts.
+
+   Fix: eliminate ALL visual state changes so nothing triggers
+   a repaint with different content. No JS hover manager either —
+   even class toggling causes style recalc → repaint → ghosting.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Kill all CSS variables that produce glows ── */
+html.is-linux {
+  --theme-color-glow: none !important;
+  --accent-glow: none !important;
+}
+
+/* ── Kill ALL transitions and animations globally ── */
+html.is-linux *,
+html.is-linux *::before,
+html.is-linux *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ── Kill ALL outer box-shadows (bleed into transparent areas) ── */
+html.is-linux .blob-bg,
+html.is-linux .gel-orb-bg,
+html.is-linux .gel-pill,
+html.is-linux .gel-pill.active,
+html.is-linux .orb-toggle.active,
+html.is-linux .seek-handle,
+html.is-linux .seek-progress,
+html.is-linux .volume-fill,
+html.is-linux .color-preview {
+  box-shadow: none !important;
+}
+
+html.is-linux ::-webkit-scrollbar-thumb {
+  box-shadow: none !important;
+}
+
+html.is-linux .eq-slider::-webkit-slider-thumb {
+  box-shadow: none !important;
+}
+
+/* ── Remove compositor layer promotion (causes stale cached layers) ── */
+html.is-linux .blob-body {
+  backface-visibility: visible;
+  transform: none;
+}
+
+/* ── Contain repaints inside blob-inner so they can't reach blob-bg (skin PNGs) ── */
+html.is-linux .blob-inner {
+  contain: paint;
+}
+
+html.is-linux .gel-orb-bg {
+  transform: none;
+}
+
+html.is-linux .file-item,
+html.is-linux .playlist-item,
+html.is-linux .gel-pill {
+  transform: none !important;
+  backface-visibility: visible;
+}
+
+/* ── Contain gel-orb paint (z-index:-1 leaks outside overflow:hidden) ── */
+html.is-linux .gel-orb {
+  isolation: isolate;
+}
+
+/* ── KILL EVERY :hover, :focus, :active VISUAL CHANGE ──
+   Every single rule in the stylesheet that changes appearance
+   on :hover/:focus/:active is neutralized here with !important.
+   If nothing changes visually, nothing can ghost. */
+
+/* gel-orb hover/active */
+html.is-linux .gel-orb:hover {
+  transform: scale(1.08) !important;
+}
+html.is-linux .gel-orb:hover .gel-orb-bg {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: none !important;
+}
+html.is-linux .gel-orb:active .gel-orb-bg {
+  background: linear-gradient(180deg,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.35), 0.85) 0%,
+      hsla(var(--theme-h), var(--theme-s), calc(var(--theme-l) * 0.80), 0.85) 100%) !important;
+}
+html.is-linux .gel-orb.playing {
+  box-shadow: none !important;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+}
+
+/* gel-pill hover */
+html.is-linux .gel-pill:hover {
+  transform: scale(1.05) !important;
+  background: linear-gradient(180deg, rgba(60, 65, 75, 0.85) 0%, rgba(180, 185, 195, 0.85) 100%) !important;
+}
+
+/* seek handle — don't reveal on hover */
+html.is-linux .seek-bar:hover .seek-handle,
+html.is-linux .seek-bar.seeking .seek-handle {
+  opacity: 0 !important;
+}
+
+/* file-item hover */
+html.is-linux .file-item:hover {
+  background: transparent !important;
+  padding-left: 12px !important;
+  transform: none !important;
+}
+html.is-linux .dir-item:hover {
+  background: transparent !important;
+  padding-left: 12px !important;
+  transform: scale(1.015) !important;
+}
+
+html.is-linux .audio-item:hover {
+  transform: scale(1.015) !important;
+}
+
+/* audio-item + button — always visible, no hover change */
+html.is-linux .audio-item .file-add {
+  opacity: 0.5 !important;
+}
+html.is-linux .audio-item:hover .file-add {
+  opacity: 0.5 !important;
+}
+html.is-linux .audio-item .file-add:hover {
+  opacity: 0.5 !important;
+  transform: scale(1.3) !important;
+}
+
+/* playlist-item hover */
+html.is-linux .playlist-item:hover {
+  background: transparent !important;
+  transform: scale(1.015) !important;
+}
+html.is-linux .playlist-item .pl-rm {
+  opacity: 0.5 !important;
+}
+html.is-linux .playlist-item:hover .pl-rm {
+  opacity: 0.5 !important;
+}
+html.is-linux .playlist-item .pl-rm:hover {
+  opacity: 0.5 !important;
+  color: #fff !important;
+  transform: scale(1.3) !important;
+}
+html.is-linux .playlist-item:hover .pl-grip {
+  opacity: 0 !important;
+}
+html.is-linux .playlist-item .pl-grip:hover {
+  opacity: 0 !important;
+  color: var(--text-dim) !important;
+  transform: scale(1.3) !important;
+}
+
+/* orb-toggle hover */
+html.is-linux .orb-toggle:hover {
+  opacity: 0.45 !important;
+  transform: scale(1.15) !important;
+}
+html.is-linux .orb-toggle.active:hover {
+  opacity: 1 !important;
+}
+html.is-linux .orb-github:hover {
+  opacity: 0.6 !important;
+  box-shadow: none !important;
+  transform: scale(1.15) !important;
+}
+
+/* gel-select hover/focus — match base state exactly, zero visual change */
+html.is-linux .gel-select:hover,
+html.is-linux .gel-select:focus {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* eq-slider thumb hover — match base state exactly */
+html.is-linux .eq-slider::-webkit-slider-thumb:hover {
+  background: linear-gradient(90deg,
+      hsla(var(--theme-h), var(--theme-s), 95%, 1) 0%,
+      #ffffff 50%,
+      hsla(var(--theme-h), var(--theme-s), 75%, 1) 52%,
+      hsla(var(--theme-h), var(--theme-s), 60%, 1) 100%) !important;
+  box-shadow: none !important;
+}
+
+/* eq-reset hover */
+html.is-linux .eq-reset:hover {
+  opacity: 0.85 !important;
+  transform: scale(1.08) !important;
+  background: linear-gradient(180deg, rgba(60, 65, 75, 0.85) 0%, rgba(180, 185, 195, 0.85) 100%) !important;
+  box-shadow: none !important;
+}
+
+/* settings-link hover */
+html.is-linux .settings-link:hover {
+  transform: scale(1.08) !important;
+  background: linear-gradient(180deg, rgba(60, 65, 75, 0.85) 0%, rgba(180, 185, 195, 0.85) 100%) !important;
+  box-shadow: none !important;
+}
+
+/* btn-reset-color hover */
+html.is-linux #btn-reset-color:hover {
+  opacity: 0.85 !important;
+  transform: scale(1.08) !important;
+  background: linear-gradient(180deg, rgba(60, 65, 75, 0.85) 0%, rgba(180, 185, 195, 0.85) 100%) !important;
+  box-shadow: none !important;
+}
+
+/* browser-search focus glow */
+html.is-linux .browser-search:focus {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+}
+
+/* drag-over glow on blob */
+html.is-linux .blob-body.drag-over::before {
+  border-color: transparent !important;
+  box-shadow: none !important;
 }

@@ -50,23 +50,6 @@ function loadTrack(track) {
         currentObjectUrl = null;
     }
 
-    // track.data can be:
-    //   - an ArrayBuffer (Electron IPC)
-    //   - a data URL string (Tauri: "data:audio/mpeg;base64,...")
-    if (track.data) {
-        if (typeof track.data === 'string' && track.data.startsWith('data:')) {
-            // Data URL from Tauri — use directly
-            audio.src = track.data;
-        } else {
-            // ArrayBuffer from Electron — create blob
-            const blob = new Blob([track.data], { type: track.type || 'audio/mpeg' });
-            currentObjectUrl = URL.createObjectURL(blob);
-            audio.src = currentObjectUrl;
-        }
-    } else if (track.path) {
-        audio.src = 'file://' + track.path;
-    }
-
     const name = cleanName(track.name || 'Unknown');
     const titleSpan = trackTitle.querySelector('span');
     titleSpan.textContent = name;
@@ -79,9 +62,55 @@ function loadTrack(track) {
         }
     });
 
-    audio.play().catch(() => { });
+    if (track.data) {
+        // Data URL or ArrayBuffer provided directly
+        if (typeof track.data === 'string' && track.data.startsWith('data:')) {
+            audio.src = track.data;
+        } else {
+            const blob = new Blob([track.data], { type: track.type || 'audio/mpeg' });
+            currentObjectUrl = URL.createObjectURL(blob);
+            audio.src = currentObjectUrl;
+        }
+        playAfterLoad();
+    } else if (track.path) {
+        // Try audiofile:// protocol first, fall back to read_file IPC
+        setSourceWithFallback(track.path);
+    }
+}
+
+function setSourceWithFallback(filePath) {
+    const protocolUrl = window.gel.audioFileUrl(filePath);
+
+    // One-shot error handler: if audiofile:// fails, fall back to read_file
+    const onError = () => {
+        audio.removeEventListener('error', onError);
+        console.warn('[player] audiofile:// failed, falling back to read_file for:', filePath);
+        window.gel.readFile(filePath).then((result) => {
+            if (result.error) {
+                console.error('[player] read_file fallback also failed:', result.error);
+                return;
+            }
+            audio.src = result.data;
+            playAfterLoad();
+        });
+    };
+
+    audio.addEventListener('error', onError);
+
+    // Clear the error handler once audio starts loading successfully
+    audio.addEventListener('loadeddata', () => {
+        audio.removeEventListener('error', onError);
+    }, { once: true });
+
+    audio.src = protocolUrl;
+    playAfterLoad();
+}
+
+function playAfterLoad() {
+    audio.play().catch((err) => {
+        console.warn('[player] play() failed:', err);
+    });
     btnPlay.classList.add('playing');
-    window.gel.nuclearFlush(); // Heavy reset for Linux skins
     broadcastState('playing');
 }
 
@@ -91,12 +120,10 @@ btnPlay.addEventListener('click', () => {
     if (audio.paused) {
         audio.play().catch(() => { });
         btnPlay.classList.add('playing');
-        window.gel.nuclearFlush(); // Heavy reset for Linux skins
         broadcastState('playing');
     } else {
         audio.pause();
         btnPlay.classList.remove('playing');
-        window.gel.nuclearFlush(); // Heavy reset for Linux skins
         broadcastState('paused');
     }
 });
@@ -106,8 +133,7 @@ btnStop.addEventListener('click', () => {
     audio.currentTime = 0;
     btnPlay.classList.remove('playing');
     seekProgress.style.width = '0%';
-    trackTime.textContent = '—:—';
-    window.gel.nuclearFlush(); // Heavy reset for Linux skins
+    trackTime.textContent = '\u2014:\u2014';
     broadcastState('stopped');
 });
 
@@ -115,12 +141,10 @@ btnPrev.addEventListener('click', () => window.gel.prev());
 btnNext.addEventListener('click', () => window.gel.next());
 btnShuffle.addEventListener('click', () => {
     btnShuffle.classList.toggle('active');
-    window.gel.forceClearWindow(); // Fix additive ghosting
     window.gel.playerState({ action: 'toggleShuffle' });
 });
 btnRepeat.addEventListener('click', () => {
     btnRepeat.classList.toggle('active');
-    window.gel.forceClearWindow(); // Fix additive ghosting
     window.gel.playerState({ action: 'toggleRepeat' });
 });
 
@@ -180,7 +204,6 @@ audio.addEventListener('timeupdate', () => {
 
 audio.addEventListener('ended', () => {
     btnPlay.classList.remove('playing');
-    window.gel.forceClearWindow(); // Fix additive ghosting
     window.gel.trackEnded();
 });
 
@@ -230,10 +253,10 @@ window.gel.onPlayTrack((track) => loadTrack(track));
 window.gel.onStop(() => {
     audio.pause();
     audio.currentTime = 0;
-    btnPlay.textContent = '▶';
+    btnPlay.textContent = '\u25b6';
     btnPlay.classList.remove('playing');
     seekProgress.style.width = '0%';
-    trackTime.textContent = '—:—';
+    trackTime.textContent = '\u2014:\u2014';
 });
 
 // ── Window dragging ─────────────────────────────────────────
@@ -241,7 +264,7 @@ initWindowDrag();
 
 // ── Helpers ─────────────────────────────────────────────────
 function fmt(sec) {
-    if (isNaN(sec)) return '—:—';
+    if (isNaN(sec)) return '\u2014:\u2014';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
@@ -319,17 +342,7 @@ document.getElementById('btn-settings').addEventListener('click', () => {
     window.gel.toggleWindow('settings');
 });
 
-// ── Skin: load saved skin on startup ────────────────────────
-(async () => {
-    try {
-        const savedSkin = localStorage.getItem('gel:skin') || 'default';
-        if (savedSkin !== 'default') {
-            window.gel.applySkin(savedSkin);
-        }
-    } catch (e) {
-        console.warn('[player] Failed to apply saved skin:', e);
-    }
-})();
+// Skin startup loading is handled by skin-loader.js (shared by all windows)
 
 // ── 5-band EQ (filter chain lives here, player owns audio) ──
 const EQ_BAND_DEFS = [

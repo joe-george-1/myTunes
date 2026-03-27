@@ -35,8 +35,12 @@ document.getElementById('btn-close').addEventListener('click', () => {
 skinSelect.addEventListener('change', async () => {
     const skinName = skinSelect.value;
     localStorage.setItem('gel:skin', skinName);
+    // Broadcast to other windows
     window.gel.applySkin(skinName);
-    await window.gel.nuclearFlush(); // Heavy reset for Linux skins
+    // Apply locally directly — don't wait for event round-trip
+    if (window._skinLoader) {
+        window._skinLoader.applySkin(skinName);
+    }
 });
 
 // ── EQ sliders → send values to player via event ─────────────
@@ -117,6 +121,8 @@ class HSVColorPicker {
 
         window.addEventListener('mouseup', () => {
             if (this.isDraggingHSV || this.isDraggingHue) {
+                // On Linux, theme was deferred during drag to avoid ghosting
+                if (window.gel.isLinux) this.updateGlobalTheme();
                 this.save();
             }
             this.isDraggingHSV = false;
@@ -128,7 +134,6 @@ class HSVColorPicker {
             this.renderHSV();
             this.updateGlobalTheme();
             this.save();
-            window.gel.forceClearWindow(); // Fix additive ghosting
         });
     }
 
@@ -184,7 +189,9 @@ class HSVColorPicker {
         y = Math.max(0, Math.min(rect.height, y));
         this.h = (y / rect.height) * 360;
         this.renderHSV();
-        this.updateGlobalTheme();
+        // On Linux, defer CSS variable updates to mouseup to prevent ghosting.
+        // The canvas preview still updates live via renderHSV().
+        if (!window.gel.isLinux) this.updateGlobalTheme();
     }
 
     handleHSV(e) {
@@ -196,9 +203,9 @@ class HSVColorPicker {
 
         this.s = (x / rect.width) * 100;
         this.v = (1 - (y / rect.height)) * 100;
-        
+
         this.renderHSV();
-        this.updateGlobalTheme();
+        if (!window.gel.isLinux) this.updateGlobalTheme();
     }
 
     updateGlobalTheme() {
@@ -208,24 +215,22 @@ class HSVColorPicker {
         const v_hsv = this.v / 100;
         let l = v_hsv * (1 - s_hsv / 2);
         let s_hsl = (l === 0 || l === 1) ? 0 : (v_hsv - l) / Math.min(l, 1 - l);
-        
+
         const payload = {
             h: this.h,
             s: (s_hsl * 100).toFixed(1) + '%',
             l: (l * 100).toFixed(1) + '%'
         };
 
+        // Broadcast to all windows (including this one via gel-bridge listener)
         if (window.gel.emitThemeColor) {
             window.gel.emitThemeColor(payload);
         }
 
-        // Apply locally too
+        // Apply locally too (immediate, don't wait for event round-trip)
         document.documentElement.style.setProperty('--theme-h', payload.h);
         document.documentElement.style.setProperty('--theme-s', payload.s);
         document.documentElement.style.setProperty('--theme-l', payload.l);
-
-        // Optional: clear buffer on substantial theme changes if needed
-        // (Removing for now to keep dragging smooth, but Reset covers the big one)
     }
 
     save() {
@@ -240,7 +245,7 @@ document.getElementById('link-github').addEventListener('click', () => {
     window.gel.openExternal('https://github.com/joe-george-1');
 });
 document.getElementById('link-kofi').addEventListener('click', () => {
-    window.gel.openExternal('https://ko-fi.com/joe_george');
+    window.gel.openExternal('mailto:1123.jpg@gmail.com');
 });
 
 // ── Window drag ─────────────────────────────────────────────

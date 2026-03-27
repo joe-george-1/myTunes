@@ -73,29 +73,29 @@
         }
     }
 
+    // ── Audio file URL helper ────────────────────────────────
+    // Converts a filesystem path to a URL served by the custom audiofile:// protocol.
+    // This avoids base64-encoding entire audio files and sending them over IPC.
+    function audioFileUrl(filePath) {
+        return 'audiofile://localhost/' + encodeURIComponent(filePath);
+    }
+
     // ── Build the gel API ────────────────────────────────────
     window.gel = {
         // ── Window drag APIs ─────────────────────────────────
         _startNativeDrag: nativeDrag,
         windowDrag: (dx, dy) => invoke('window_drag', { label: _label, dx, dy }),
-        forceClearWindow: (label) => invoke('force_clear_window', { label }),
-        nuclearFlush: async () => {
-            if (!isLinux) return;
-            // Poking the compositor without resizing — uses redraw + layer toggle
-            return new Promise(resolve => {
-                requestAnimationFrame(() => {
-                    document.body.style.filter = 'opacity(0.99)';
-                    invoke('force_clear_window', { label: _label });
-                    requestAnimationFrame(() => {
-                        document.body.style.filter = '';
-                        invoke('force_clear_window', { label: _label });
-                        resolve();
-                    });
-                });
-            });
-        },
+
+        // nuclearFlush / forceClearWindow removed — they caused ghosting.
+        // Kept as no-ops so callers don't need to check before calling.
+        nuclearFlush: async () => {},
+        forceClearWindow: () => {},
+
         isLinux: isLinux,
-        
+
+        // Audio file URL
+        audioFileUrl: audioFileUrl,
+
         // Theme
         emitThemeColor: (payload) => emit('gel:themeColorChange', payload),
         onThemeColorChange: (callback) => {
@@ -108,6 +108,12 @@
         // ── Filesystem (Rust commands) ───────────────────────
         readDir: (dirPath) => invoke('read_dir', { path: dirPath })
             .catch(e => { console.error('[gel] readDir error:', e); return { path: dirPath, entries: [], error: String(e) }; }),
+
+        getCoverArt: (dirPath) => invoke('get_cover_art', { path: dirPath })
+            .catch(e => { console.error('[gel] getCoverArt error:', e); return null; }),
+
+        getPendingCoverPath: () => invoke('get_pending_cover_path')
+            .catch(e => { console.error('[gel] getPendingCoverPath error:', e); return null; }),
 
         readFile: (filePath) => invoke('read_file', { path: filePath })
             .catch(e => { console.error('[gel] readFile error:', e); return { error: String(e) }; }),
@@ -140,6 +146,12 @@
 
         // ── Window management (Rust commands) ────────────────
         toggleWindow: (name) => invoke('toggle_window', { name }),
+        showCoverArt: async (dirPath) => {
+            // Store path in Rust state and show window.
+            // The coverviewer pulls the path itself after loading —
+            // no timing dependency on events.
+            await invoke('show_cover_art', { dirPath });
+        },
         closeWindow: async () => {
             if (!_label) _label = await invoke('get_window_label');
             return invoke('close_window', { label: _label });
@@ -172,6 +184,7 @@
         onTrackEndedInBrowser: (cb) => listen('gel:trackEnded', () => cb()),
         onWindowVisibility: (cb) => listen('gel:windowVisibility', (e) => cb(e.payload)),
         onEqChange: (cb) => listen('gel:eqChange', (e) => cb(e.payload)),
+        onCoverArt: (cb) => listen('gel:coverArt', (e) => cb(e.payload)),
 
         // ── Skins ────────────────────────────────────────────
         listSkins: () => invoke('list_skins'),
@@ -181,7 +194,30 @@
     };
 
     console.log('[gel-bridge] window.gel API ready');
+
     // ── Global Theme Sync ──────────────────────────────────────
+
+    // Helper: apply HSV theme from localStorage to CSS variables
+    function applyThemeFromStorage() {
+        const saved = localStorage.getItem('gel:theme');
+        if (!saved) return;
+        try {
+            const { h, s, v } = JSON.parse(saved);
+            const s_hsv = s / 100;
+            const v_hsv = v / 100;
+            let l = v_hsv * (1 - s_hsv / 2);
+            let s_hsl = (l === 0 || l === 1) ? 0 : (v_hsv - l) / Math.min(l, 1 - l);
+
+            const root = document.documentElement;
+            root.style.setProperty('--theme-h', h);
+            root.style.setProperty('--theme-s', (s_hsl * 100).toFixed(1) + '%');
+            root.style.setProperty('--theme-l', (l * 100).toFixed(1) + '%');
+        } catch (e) {}
+    }
+
+    // All windows listen for theme events and apply CSS variables.
+    // On Linux, contain:paint on .blob-inner isolates these repaints
+    // from reaching .blob-bg (skin PNGs), preventing edge ghosting.
     window.gel.onThemeColorChange((payload) => {
         const root = document.documentElement;
         root.style.setProperty('--theme-h', payload.h);
@@ -190,47 +226,6 @@
     });
 
     // Apply saved theme on load
-    const savedTheme = localStorage.getItem('gel:theme');
-    if (savedTheme) {
-        try {
-            const { h, s, v } = JSON.parse(savedTheme);
-            // HSV to HSL
-            const s_hsv = s / 100;
-            const v_hsv = v / 100;
-            let l = v_hsv * (1 - s_hsv / 2);
-            let s_hsl = (l === 0 || l === 1) ? 0 : (v_hsv - l) / Math.min(l, 1 - l);
-            
-            const root = document.documentElement;
-            root.style.setProperty('--theme-h', h);
-            root.style.setProperty('--theme-s', (s_hsl * 100).toFixed(1) + '%');
-            root.style.setProperty('--theme-l', (l * 100).toFixed(1) + '%');
-        } catch (e) {}
-    }
-
-    // ── Global Theme Sync ──────────────────────────────────────
-    window.gel.onThemeColorChange((payload) => {
-        const root = document.documentElement;
-        root.style.setProperty('--theme-h', payload.h);
-        root.style.setProperty('--theme-s', payload.s);
-        root.style.setProperty('--theme-l', payload.l);
-    });
-
-    // Apply saved theme on load (Initial)
-    const initialTheme = localStorage.getItem('gel:theme');
-    if (initialTheme) {
-        try {
-            const { h, s, v } = JSON.parse(initialTheme);
-            // HSV to HSL
-            const s_hsv = s / 100;
-            const v_hsv = v / 100;
-            let l = v_hsv * (1 - s_hsv / 2);
-            let s_hsl = (l === 0 || l === 1) ? 0 : (v_hsv - l) / Math.min(l, 1 - l);
-            
-            const root = document.documentElement;
-            root.style.setProperty('--theme-h', h);
-            root.style.setProperty('--theme-s', (s_hsl * 100).toFixed(1) + '%');
-            root.style.setProperty('--theme-l', (l * 100).toFixed(1) + '%');
-        } catch (e) {}
-    }
+    applyThemeFromStorage();
 
 })();
