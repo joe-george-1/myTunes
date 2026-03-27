@@ -1,63 +1,144 @@
-# myTunes
 
-![myTunes Screenshot](https://raw.githubusercontent.com/nicbarker/myTunes/main/preview.png) *(Add a screenshot here later)*
+```
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║              ███╗   ███╗██╗   ██╗████████╗██╗   ██╗             ║
+║              ████╗ ████║╚██╗ ██╔╝╚══██╔══╝██║   ██║             ║
+║              ██╔████╔██║ ╚████╔╝    ██║   ██║   ██║             ║
+║              ██║╚██╔╝██║  ╚██╔╝     ██║   ██║   ██║             ║
+║              ██║ ╚═╝ ██║   ██║      ██║   ╚██████╔╝             ║
+║              ╚═╝     ╚═╝   ╚═╝      ╚═╝    ╚═════╝              ║
+║                        ─── N E S ───                             ║
+║                                                                  ║
+║           skinnable transparent desktop music player             ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
 
-**myTunes** is a beautiful, highly-customizable desktop audio player built with Rust and Tauri. It features a unique multi-window "gel" interface reminiscent of the early 2000s, but powered by modern web technologies. 
+> *Frameless. Transparent. Fully skinnable. Your desktop is the UI.*
 
-It is completely skinnable, transparent, and built to treat music playback as a visually rich desktop experience.
+---
 
-## Features
+## Screenshots
 
-- **Multi-Window Gel UI**: The Player, Browser, Playlist, Visualizer, and Settings are all distinct borderless windows that can be dragged independently around your desktop.
-- **Pixel-Perfect Skinnability**: Swap skins on the fly using simple PNG images. The application mathematically conforms to the transparent edges of your skins.
-- **Compositor Native**: Integrates with Windows, macOS, and Linux desktop compositors to ensure crisp transparency without visual overlapping.
-- **Local Audio Support**: Natively plays back standard audio formats (`.mp3`, `.wav`, `.ogg`, `.flac`, `.m4a`, etc.) directly from your file system.
-- **Cross-Platform Support**: Registers flawlessly as your default audio application on Mac, PC, and Linux.
-- **System Resource Friendly**: Powered by a Rust backend, consuming minimal RAM and CPU while delivering maximum aesthetics.
+### Bliss
+![Bliss skin](screenshots/bliss.png)
 
-## Installation
+### Cyber
+![Cyber skin](screenshots/cyber.png)
 
-*Pre-compiled, 1-click installers for **macOS, Windows, and Linux** are coming soon.*
+### Iron
+![Iron skin](screenshots/iron.png)
 
-Until releases are published, you can compile and run it locally:
+### Giger
+![Giger skin](screenshots/giger.png)
+
+### Metro
+![Metro skin](screenshots/metro.png)
+
+---
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        F E A T U R E S                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+```
+  ╭──────────────────────────────────────────────────────────╮
+  │  ◈  Multi-window gel UI — player, browser, playlist,     │
+  │     visualizer, and settings as independent windows       │
+  │                                                           │
+  │  ◈  5 unique skins — Bliss, Cyber, Iron, Giger, Metro    │
+  │                                                           │
+  │  ◈  Global theme color picker — tint everything at once   │
+  │                                                           │
+  │  ◈  5-band EQ — Bass, Lo, Mid, Hi, Air                   │
+  │                                                           │
+  │  ◈  Album cover viewer — embedded artwork display         │
+  │                                                           │
+  │  ◈  Real-time visualizer — waveform + frequency bars      │
+  │                                                           │
+  │  ◈  Pixel-perfect skinnability — swap skins with PNGs     │
+  │                                                           │
+  │  ◈  Skin templates included — create your own             │
+  │                                                           │
+  │  ◈  Transparent frameless windows — desktop-native        │
+  │                                                           │
+  │  ◈  Local playback — mp3, flac, wav, ogg, m4a, aac       │
+  │                                                           │
+  │  ◈  Cross-platform — macOS, Windows, Linux                │
+  │                                                           │
+  │  ◈  Rust + Tauri backend — lightweight and fast           │
+  ╰──────────────────────────────────────────────────────────╯
+```
+
+---
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      I N S T A L L                              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Pre-compiled installers for **macOS, Windows, and Linux** are coming soon.
+
+Until then, build from source:
 
 ### Prerequisites
 
-You will need the standard Tauri build environment setup for your OS:
 - Node.js
 - Rust (`cargo`)
-- OS-specific build dependencies (C++ build tools on Windows, Xcode on macOS, WebKitGTK/libsoup on Linux).
+- OS-specific deps: C++ build tools (Windows), Xcode (macOS), WebKitGTK + libsoup (Linux)
 
-### Running Locally
+### Run
 
 ```bash
-# Clone the repository
 git clone https://github.com/yourusername/myTunes.git
 cd myTunes
-
-# Install frontend dependencies
 npm install
-
-# Run the development server
 npm run tauri dev
 ```
 
-### Building for Release
-
-To compile a native binary for your operating system:
+### Build
 
 ```bash
 npm run tauri build
 ```
 
-The compiled installers will be located in `src-tauri/target/release/bundle/`.
-
-## Custom Skins
-Adding your own skins is as simple as creating a folder in the `skins/` directory and dropping in PNGs named `player.png`, `browser.png`, `playlist.png`, `settings.png`, and `visualizer.png`. 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Output: `src-tauri/target/release/bundle/`
 
 ---
-*Made with Claude Opus 4.6 and Gemini 3.1 — March 2026*
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   C U S T O M   S K I N S                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Skin templates are included in `skins/Template/`. Create a folder in `skins/` and drop in your PNGs:
+
+```
+skins/YourSkin/
+  ├── player.png
+  ├── browser.png
+  ├── playlist.png
+  ├── visualizer.png
+  └── settings.png
+```
+
+The app mathematically conforms to the transparent edges of your artwork. Go wild.
+
+---
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       L I C E N S E                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+MIT License — see [LICENSE](LICENSE)
+
+---
+
+*Made with Claude Opus 4.6 and Gemini 2.5 Pro — March 2026*
