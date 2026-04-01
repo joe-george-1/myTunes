@@ -126,6 +126,44 @@
         ],
         "resources": [
             "../skins/**/*"
-        ]
+        ],
+        "icon": [
+            "icons/icon.png"
+        ],
+        "windows": {
+            "nsis": {
+                "installMode": "both",
+                "displayLanguageSelector": false
+            }
+        },
+        "macOS": {
+            "minimumSystemVersion": "10.15",
+            "infoPlist": {
+                "CFBundleDocumentTypes": [
+                    {
+                        "CFBundleTypeName": "Audio File",
+                        "CFBundleTypeRole": "Viewer",
+                        "LSHandlerRank": "Alternate",
+                        "LSItemContentTypes": [
+                            "public.mp3",
+                            "public.mpeg-4-audio",
+                            "org.xiph.flac",
+                            "com.microsoft.waveform-audio",
+                            "org.xiph.ogg-vorbis",
+                            "public.aac-audio"
+                        ],
+                        "CFBundleTypeExtensions": [
+                            "mp3", "m4a", "flac", "wav", "ogg", "aac", "opus", "wma", "webm"
+                        ]
+                    }
+                ]
+            }
+        },
+        "linux": {
+            "deb": {
+                "desktopTemplate": null
+            },
+            "appimage": {}
+        }
     }
 }

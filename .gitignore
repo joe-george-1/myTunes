@@ -29,9 +29,8 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Skins
-
-skins/Bliss/*.png
-skins/Cybe/*.png
-skins/Giger/*.png
-skins/Iron/*.png
+# Skins (only Template ships in the open-source repo)
+skins/Bliss/
+skins/Cyber/
+skins/Giger/
+skins/Iron/
