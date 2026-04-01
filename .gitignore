@@ -31,7 +31,7 @@ Thumbs.db
 
 # Skins
 
-skins/Bliss
-skins/Cyber
-skins/Giger
-skins/Iron
+skins/Bliss/*.png
+skins/Cybe/*.png
+skins/Giger/*.png
+skins/Iron/*.png
