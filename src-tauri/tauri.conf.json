@@ -107,7 +107,7 @@
     },
     "bundle": {
         "active": true,
-        "category": "AudioVideo",
+        "category": "Music",
         "fileAssociations": [
             {
                 "name": "Audio File",
@@ -130,7 +130,8 @@
             "../skins/**/*"
         ],
         "icon": [
-            "icons/icon.png"
+            "icons/icon.png",
+            "icons/icon.ico"
         ],
         "windows": {
             "nsis": {
