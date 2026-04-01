@@ -28,3 +28,10 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Skins
+
+skins/Bliss
+skins/Cyber
+skins/Giger
+skins/Iron

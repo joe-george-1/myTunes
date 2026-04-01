@@ -332,6 +332,11 @@ window.gel.onWindowVisibility((state) => {
     if ('visualizer' in state) btnToggleViz.classList.toggle('active', state.visualizer);
 });
 
+// ── Minimize all windows ────────────────────────────────────
+document.getElementById('btn-minimize').addEventListener('click', () => {
+    window.gel.minimizeAll();
+});
+
 // ── Close (quit app) ────────────────────────────────────────
 document.getElementById('btn-close').addEventListener('click', () => {
     window.gel.closeWindow();

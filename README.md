@@ -27,9 +27,6 @@
 ### Giger
 ![Giger skin](screenshots/giger.png)
 
-### Metro
-![Metro skin](screenshots/metro.png)
-
 ---
 
 ```
@@ -43,7 +40,7 @@
   │  ◈  Multi-window gel UI — player, browser, playlist,     │
   │     visualizer, and settings as independent windows      │
   │                                                          │
-  │  ◈  5 unique skins — Bliss, Cyber, Iron, Giger, Metro    │
+  │  ◈  4 unique skins — Bliss, Cyber, Iron, Giger, Metro    │
   │                                                          │
   │  ◈  Global theme color picker — tint everything at once  │
   │                                                          │

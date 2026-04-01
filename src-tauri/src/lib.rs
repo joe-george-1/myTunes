@@ -10,6 +10,7 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 // ── Shared state for cover art path ──────────────────────────────────────────
 struct CoverArtState(Mutex<Option<String>>);
+struct MinimizedSet(Mutex<Vec<String>>);
 
 // ── Audio extensions ────────────────────────────────────────────────────────
 const AUDIO_EXTENSIONS: &[&str] = &[
@@ -354,6 +355,22 @@ fn toggle_window(app: AppHandle, name: String) {
 }
 
 #[tauri::command]
+fn minimize_all(app: AppHandle) {
+    let mut visible = Vec::new();
+    for label in &["player", "browser", "playlist", "visualizer", "settings", "coverviewer"] {
+        if let Some(win) = app.get_webview_window(label) {
+            if win.is_visible().unwrap_or(false) {
+                visible.push(label.to_string());
+                let _ = win.minimize();
+            }
+        }
+    }
+    if let Some(state) = app.try_state::<MinimizedSet>() {
+        *state.0.lock().unwrap() = visible;
+    }
+}
+
+#[tauri::command]
 fn close_window(app: AppHandle, label: String) {
     if label == "player" {
         // Closing the player quits the app
@@ -421,6 +438,22 @@ fn window_drag(app: AppHandle, label: String, dx: f64, dy: f64) {
 }
 
 #[tauri::command]
+fn drag_all(app: AppHandle, dx: f64, dy: f64) {
+    for label in &["player", "browser", "playlist", "visualizer", "settings", "coverviewer"] {
+        if let Some(win) = app.get_webview_window(label) {
+            if win.is_visible().unwrap_or(false) {
+                if let Ok(pos) = win.outer_position() {
+                    let _ = win.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                        x: pos.x + dx as i32,
+                        y: pos.y + dy as i32,
+                    }));
+                }
+            }
+        }
+    }
+}
+
+#[tauri::command]
 fn get_window_label(window: WebviewWindow) -> String {
     window.label().to_string()
 }
@@ -436,14 +469,17 @@ pub fn run() {
             list_skins,
             load_skin,
             toggle_window,
+            minimize_all,
             close_window,
             show_cover_art,
             get_pending_cover_path,
             open_external,
             window_drag,
+            drag_all,
             get_window_label,
         ])
         .manage(CoverArtState(Mutex::new(None)))
+        .manage(MinimizedSet(Mutex::new(Vec::new())))
         .register_uri_scheme_protocol("audiofile", |_app, request| {
             // Custom protocol: audiofile://localhost/<encoded-path>
             // Serves audio files directly to <audio> elements, avoiding base64 IPC.
@@ -533,8 +569,45 @@ pub fn run() {
             let app_handle = app.handle().clone();
             if let Some(player_win) = app_handle.get_webview_window("player") {
                 let ah = app_handle.clone();
+                let ah_minimize = app_handle.clone();
+                let ah_restore = app_handle.clone();
                 player_win.on_window_event(move |event| {
+                    // When player is minimized (e.g. taskbar click), minimize all others
+                    if let tauri::WindowEvent::Resized(_) = event {
+                        if let Some(player) = ah_minimize.get_webview_window("player") {
+                            if player.is_minimized().unwrap_or(false) {
+                                if let Some(state) = ah_minimize.try_state::<MinimizedSet>() {
+                                    let mut guard = state.0.lock().unwrap();
+                                    if guard.is_empty() {
+                                        let mut visible = vec!["player".to_string()];
+                                        for label in &["browser", "playlist", "visualizer", "settings", "coverviewer"] {
+                                            if let Some(w) = ah_minimize.get_webview_window(label) {
+                                                if w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(true) {
+                                                    visible.push(label.to_string());
+                                                    let _ = w.minimize();
+                                                }
+                                            }
+                                        }
+                                        *guard = visible;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if let tauri::WindowEvent::Focused(true) = event {
+                        // Restore all windows that were visible before minimize
+                        if let Some(state) = ah_restore.try_state::<MinimizedSet>() {
+                            let labels: Vec<String> = {
+                                let mut guard = state.0.lock().unwrap();
+                                std::mem::take(&mut *guard)
+                            };
+                            for label in &labels {
+                                if label == "player" { continue; }
+                                if let Some(w) = ah_restore.get_webview_window(label) {
+                                    let _ = w.unminimize();
+                                }
+                            }
+                        }
                         // Send current visibility of all windows
                         let mut payload = serde_json::Map::new();
                         for label in &["browser", "playlist", "visualizer"] {

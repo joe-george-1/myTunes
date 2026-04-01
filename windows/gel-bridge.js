@@ -152,6 +152,7 @@
             // no timing dependency on events.
             await invoke('show_cover_art', { dirPath });
         },
+        minimizeAll: () => invoke('minimize_all'),
         closeWindow: async () => {
             if (!_label) _label = await invoke('get_window_label');
             return invoke('close_window', { label: _label });
@@ -227,5 +228,42 @@
 
     // Apply saved theme on load
     applyThemeFromStorage();
+
+    // ── Middle-click drag all windows simultaneously ───────────
+    document.addEventListener('mousedown', (e) => {
+        if (e.button !== 1) return; // Middle click only
+        e.preventDefault();
+
+        let startX = e.screenX;
+        let startY = e.screenY;
+        let pendingDx = 0;
+        let pendingDy = 0;
+        let rafId = 0;
+
+        const flush = () => {
+            rafId = 0;
+            if (pendingDx === 0 && pendingDy === 0) return;
+            const dx = pendingDx;
+            const dy = pendingDy;
+            pendingDx = 0;
+            pendingDy = 0;
+            invoke('drag_all', { dx, dy });
+        };
+
+        const onMove = (e2) => {
+            pendingDx += e2.screenX - startX;
+            pendingDy += e2.screenY - startY;
+            startX = e2.screenX;
+            startY = e2.screenY;
+            if (!rafId) rafId = requestAnimationFrame(flush);
+        };
+        const onUp = () => {
+            if (rafId) { cancelAnimationFrame(rafId); flush(); }
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
 
 })();
