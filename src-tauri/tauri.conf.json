@@ -4,7 +4,9 @@
     "version": "1.0.0",
     "identifier": "com.mytunes.player",
     "build": {
-        "frontendDist": "../"
+        "beforeDevCommand": "node build-frontend.js",
+        "beforeBuildCommand": "node build-frontend.js",
+        "frontendDist": "../dist"
     },
     "app": {
         "withGlobalTauri": true,
