@@ -465,6 +465,12 @@ fn get_window_label(window: WebviewWindow) -> String {
 // ── App builder ─────────────────────────────────────────────────────────────
 
 pub fn run() {
+    // Ensure WebKitGTK renders with RGBA support for transparent windows on Linux
+    #[cfg(target_os = "linux")]
+    {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             read_dir,

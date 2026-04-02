@@ -30,9 +30,3 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Skins
-
-skins/Bliss/*.png
-skins/Cyber/*.png
-skins/Giger/*.png
-skins/Iron/*.png
