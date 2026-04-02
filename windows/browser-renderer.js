@@ -135,8 +135,11 @@ btnBack.addEventListener('click', async (e) => {
         fileListEl.scrollTop = prev.scrollTop || 0;
     } else {
         let parent;
+        // Windows: already at drive list, nowhere to go
+        if (currentPath === 'drives') {
+            return;
         // Windows: if at a drive root (e.g. "C:\"), go to drive list
-        if (/^[A-Z]:\\?$/i.test(currentPath)) {
+        } else if (/^[A-Z]:\\?$/i.test(currentPath)) {
             parent = 'drives';
         } else {
             // Handle both / and \ separators
