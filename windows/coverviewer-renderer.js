@@ -68,6 +68,14 @@
 
     loadCover();
 
+    // Listen for explicit reload event from Rust (visibilitychange is unreliable on Windows)
+    if (window.__TAURI__?.event?.listen) {
+        window.__TAURI__.event.listen('gel:loadCover', () => {
+            applyThemeFromStorage();
+            loadCover();
+        });
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
             applyThemeFromStorage();

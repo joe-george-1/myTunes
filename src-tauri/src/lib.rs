@@ -425,6 +425,8 @@ fn show_cover_art(app: AppHandle, dir_path: String) {
     if let Some(win) = app.get_webview_window("coverviewer") {
         let _ = win.show();
         let _ = win.set_focus();
+        // Notify coverviewer to reload — visibilitychange is unreliable on Windows
+        let _ = app.emit_to("coverviewer", "gel:loadCover", ());
     }
 }
 
