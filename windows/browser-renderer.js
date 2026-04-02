@@ -134,7 +134,15 @@ btnBack.addEventListener('click', async (e) => {
         // Restore scroll position to where user was
         fileListEl.scrollTop = prev.scrollTop || 0;
     } else {
-        const parent = currentPath.split('/').slice(0, -1).join('/') || '/';
+        let parent;
+        // Windows: if at a drive root (e.g. "C:\"), go to drive list
+        if (/^[A-Z]:\\?$/i.test(currentPath)) {
+            parent = 'drives';
+        } else {
+            // Handle both / and \ separators
+            const normalized = currentPath.replace(/\\/g, '/');
+            parent = normalized.split('/').slice(0, -1).join('/') || '/';
+        }
         if (parent !== currentPath) {
             currentPath = parent;
             currentPlayingIndex = -1;

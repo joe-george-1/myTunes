@@ -113,6 +113,28 @@ fn read_dir(path: Option<String>) -> DirResult {
         _ => dirs::home_dir().unwrap_or_else(|| PathBuf::from("/")),
     };
 
+    // Windows: if path is empty or "drives", list all drive letters
+    #[cfg(target_os = "windows")]
+    if path.as_deref() == Some("drives") {
+        let mut drives = Vec::new();
+        for letter in b'A'..=b'Z' {
+            let drive = format!("{}:\\", letter as char);
+            if Path::new(&drive).exists() {
+                drives.push(DirEntry {
+                    name: format!("{}: Drive", letter as char),
+                    path: drive,
+                    is_dir: true,
+                    is_audio: false,
+                });
+            }
+        }
+        return DirResult {
+            path: "drives".to_string(),
+            entries: drives,
+            error: None,
+        };
+    }
+
     let entries_result = fs::read_dir(&resolved);
     match entries_result {
         Ok(entries) => {
