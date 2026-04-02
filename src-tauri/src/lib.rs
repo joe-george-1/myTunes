@@ -283,6 +283,10 @@ fn get_cover_art(path: String) -> Option<String> {
 fn resolve_skins_dir(app: &AppHandle) -> PathBuf {
     // Try resource dir first (production builds)
     if let Ok(res) = app.path().resource_dir() {
+        // Tauri bundles "../skins/**/*" as "_up_/skins/"
+        let p = res.join("_up_").join("skins");
+        if p.exists() { return p; }
+        // Fallback: directly under resource dir
         let p = res.join("skins");
         if p.exists() { return p; }
     }
