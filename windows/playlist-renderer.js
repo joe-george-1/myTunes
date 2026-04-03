@@ -183,7 +183,6 @@ function renderPlaylist() {
         if (idx === currentIndex) classes.push('current');
         if (selectedIndices.has(idx)) classes.push('selected');
         item.className = classes.join(' ');
-        item.draggable = true;
         item.dataset.idx = idx;
 
         item.innerHTML = `
@@ -193,78 +192,13 @@ function renderPlaylist() {
       <span class="pl-rm" title="Remove">\uff0d</span>
     `;
 
-        // ── Drag reorder handlers ────────────────────────
-        item.addEventListener('dragstart', (e) => {
-            dragFromIdx = idx;
-            item.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', idx);
-        });
+        // ── Mouse-based drag reorder (replaces HTML5 drag which is broken on Windows WebView2) ──
+        item.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
 
-        item.addEventListener('dragend', () => {
-            item.classList.remove('dragging');
-            dragFromIdx = -1;
-            dragOverIdx = -1;
-            // Remove all drag-over indicators
-            playlistList.querySelectorAll('.drag-above, .drag-below').forEach(el => {
-                el.classList.remove('drag-above', 'drag-below');
-            });
-        });
-
-        item.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (dragFromIdx === idx) return;
-
-            // Show drop indicator
-            playlistList.querySelectorAll('.drag-above, .drag-below').forEach(el => {
-                el.classList.remove('drag-above', 'drag-below');
-            });
-
-            const rect = item.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            if (e.clientY < midY) {
-                item.classList.add('drag-above');
-                dragOverIdx = idx;
-            } else {
-                item.classList.add('drag-below');
-                dragOverIdx = idx + 1;
-            }
-        });
-
-        item.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (dragFromIdx < 0 || dragFromIdx === dragOverIdx) return;
-
-            // Move the track in the array
-            const [movedTrack] = tracks.splice(dragFromIdx, 1);
-
-            // Adjust target index after removal
-            let targetIdx = dragOverIdx;
-            if (dragFromIdx < targetIdx) targetIdx--;
-
-            tracks.splice(targetIdx, 0, movedTrack);
-
-            // Update currentIndex to follow the playing track
-            if (currentIndex === dragFromIdx) {
-                currentIndex = targetIdx;
-            } else if (dragFromIdx < currentIndex && targetIdx >= currentIndex) {
-                currentIndex--;
-            } else if (dragFromIdx > currentIndex && targetIdx <= currentIndex) {
-                currentIndex++;
-            }
-
-            // Clear selection and re-render
-            selectedIndices.clear();
-            dragFromIdx = -1;
-            dragOverIdx = -1;
-            renderPlaylist();
-            broadcastPlaylist();
-        });
-
-        // ── Click handlers ───────────────────────────────
-        item.addEventListener('click', (e) => {
+            // Remove button
             if (e.target.classList.contains('pl-rm')) {
+                e.stopPropagation();
                 if (selectedIndices.has(idx) && selectedIndices.size > 1) {
                     removeSelected();
                 } else {
@@ -283,7 +217,69 @@ function renderPlaylist() {
                 }
                 return;
             }
-            if (e.target.classList.contains('pl-grip')) return; // Don't select on grip click
+
+            // Grip drag
+            if (e.target.classList.contains('pl-grip')) {
+                e.preventDefault();
+                e.stopPropagation();
+                dragFromIdx = idx;
+                item.classList.add('dragging');
+
+                const onMove = (e2) => {
+                    const target = document.elementFromPoint(e2.clientX, e2.clientY);
+                    const overItem = target?.closest('.playlist-item');
+                    playlistList.querySelectorAll('.drag-above, .drag-below').forEach(el => {
+                        el.classList.remove('drag-above', 'drag-below');
+                    });
+                    if (overItem && overItem !== item) {
+                        const overIdx = parseInt(overItem.dataset.idx);
+                        const rect = overItem.getBoundingClientRect();
+                        const midY = rect.top + rect.height / 2;
+                        if (e2.clientY < midY) {
+                            overItem.classList.add('drag-above');
+                            dragOverIdx = overIdx;
+                        } else {
+                            overItem.classList.add('drag-below');
+                            dragOverIdx = overIdx + 1;
+                        }
+                    }
+                };
+
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    item.classList.remove('dragging');
+                    playlistList.querySelectorAll('.drag-above, .drag-below').forEach(el => {
+                        el.classList.remove('drag-above', 'drag-below');
+                    });
+
+                    if (dragFromIdx >= 0 && dragOverIdx >= 0 && dragFromIdx !== dragOverIdx) {
+                        const [movedTrack] = tracks.splice(dragFromIdx, 1);
+                        let targetIdx = dragOverIdx;
+                        if (dragFromIdx < targetIdx) targetIdx--;
+                        tracks.splice(targetIdx, 0, movedTrack);
+
+                        if (currentIndex === dragFromIdx) {
+                            currentIndex = targetIdx;
+                        } else if (dragFromIdx < currentIndex && targetIdx >= currentIndex) {
+                            currentIndex--;
+                        } else if (dragFromIdx > currentIndex && targetIdx <= currentIndex) {
+                            currentIndex++;
+                        }
+                        selectedIndices.clear();
+                        renderPlaylist();
+                        broadcastPlaylist();
+                    }
+                    dragFromIdx = -1;
+                    dragOverIdx = -1;
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+                return;
+            }
+
+            // Selection via mousedown (more reliable than click for modifier keys on Windows)
             handleSelect(idx, e);
         });
 

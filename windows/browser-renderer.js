@@ -288,8 +288,9 @@ function renderEntries(entries) {
                 });
             }
 
-            // Click → select
-            item.addEventListener('click', (e) => {
+            // Mousedown → select (more reliable for modifier keys on Windows WebView2)
+            item.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
                 if (e.target.closest('.file-add')) return;
                 handleAudioSelect(audioIdx, e);
             });

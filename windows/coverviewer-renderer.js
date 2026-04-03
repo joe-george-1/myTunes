@@ -23,16 +23,16 @@
         return _win;
     }
 
-    // Ensure the coverviewer always has a visible background
-    function ensureBackground() {
+    // Ensure skins don't override the transparent background
+    function ensureTransparent() {
         if (blobBg) {
-            blobBg.style.background = '';
+            blobBg.style.background = 'transparent';
             blobBg.style.opacity = '1';
         }
         blobBody.classList.remove('skin-active');
     }
-    ensureBackground();
-    requestAnimationFrame(ensureBackground);
+    ensureTransparent();
+    requestAnimationFrame(ensureTransparent);
 
     // ── Theme sync ───────────────────────────────────────────
     function applyThemeFromStorage() {
