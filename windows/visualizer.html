@@ -13,13 +13,19 @@
         <div class="gel-highlight"></div>
         <div class="scanlines"></div>
         <div class="blob-inner">
-            <div class="blob-label"><span class="label-text">VISUALIZER</span><button class="gel-orb orb-xs"
-                    id="btn-close" title="Close">
+            <div class="blob-label"><span class="label-text">VISUALIZER</span>
+                <button class="gel-orb orb-xs" id="btn-toggle-3d" title="Toggle 3D">
+                    <div class="gel-orb-bg"></div>
+                    <div class="gel-orb-highlight"></div>◆
+                </button>
+                <button class="gel-orb orb-xs" id="btn-close" title="Close">
                     <div class="gel-orb-bg"></div>
                     <div class="gel-orb-highlight"></div>✕
-                </button></div>
+                </button>
+            </div>
             <div class="viz-container">
                 <canvas id="main-viz"></canvas>
+                <canvas id="viz-3d" style="display:none"></canvas>
             </div>
         </div>
     </div>
